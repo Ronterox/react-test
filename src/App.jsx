@@ -2,6 +2,7 @@ import './css/App.css'
 import {Fragment, useEffect, useRef, useState} from 'react';
 import {v4} from 'uuid';
 import TodoList from "./components/Todolist";
+import PWAPrompt from 'react-ios-pwa-prompt'
 
 const KEY = "ricardo.todolist"
 
@@ -70,6 +71,9 @@ export default function App()
 
     return (
         <Fragment>
+            <PWAPrompt promptOnVisit={1} timesToShow={3} copyClosePrompt="Close" permanentlyHideOnDismiss={false}/>
+
+            <button className="add-button">Install Application</button>
             <h2>My List</h2>
 
             <TodoList todos={showDoneTasks ? myTodos : myTodos.filter(element => !element.completed)}

@@ -8,6 +8,7 @@ body
     padding: 10vh;
     border: solid white;
     font-family: Verdana, serif;
+    text-shadow: .2em .2em #0002;
 }
 
 ul
@@ -16,6 +17,7 @@ ul
     border: solid white;
     margin: auto;
     width: fit-content;
+    box-shadow: .2em .2em #0002;
 }
 
 li
@@ -29,6 +31,7 @@ input
     height: 5vh;
     border-radius: 5%;
     padding-left: 1vh;
+    box-shadow: .2em .2em #0002;
 }
 
 input[type=checkbox]
@@ -42,6 +45,7 @@ button
     width: 10vw;
     height: 8vh;
     border-radius: 10%;
+    box-shadow: .2em .2em #0002;
 }
 
 li button
@@ -49,4 +53,15 @@ li button
     width: 8vw;
     height: 8vh;
     border-radius: 10%;
+}
+
+.add-button
+{
+    position: absolute;
+    top: 1px;
+    left: 1px;
+    background-color: royalblue;
+    color: white;
+    font-size: 3vw;
+    margin: 2vh;
 }

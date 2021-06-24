@@ -5,7 +5,10 @@ export default function Task({ todo, toggleTodo, deleteTask, toggleEdition })
     const checkBoxTodo = (
         <>
             <input type={"checkbox"} checked={todo.completed} onChange={() => toggleTodo(todo.id)}/>
-            {todo.text}&nbsp;
+            {
+                todo.completed?<strike>{todo.text}</strike> : <>{todo.text}</>
+            }
+            &nbsp;
         </>
     );
 
@@ -26,4 +29,4 @@ export default function Task({ todo, toggleTodo, deleteTask, toggleEdition })
             <button onClick={() => deleteTask(todo.id)}>🗑️</button>
         </li>
     );
-};
+}
