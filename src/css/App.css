@@ -1,0 +1,52 @@
+body
+{
+    background-color: cornflowerblue;
+    text-align: center;
+    font-size: 3vh;
+    color: white;
+    margin: auto;
+    padding: 10vh;
+    border: solid white;
+    font-family: Verdana, serif;
+}
+
+ul
+{
+    padding: 5vh;
+    border: solid white;
+    margin: auto;
+    width: fit-content;
+}
+
+li
+{
+    text-align: left;
+}
+
+input
+{
+    width: 25vw;
+    height: 5vh;
+    border-radius: 5%;
+    padding-left: 1vh;
+}
+
+input[type=checkbox]
+{
+    width: 5vw;
+    height: 3vh;
+}
+
+button
+{
+    width: 10vw;
+    height: 8vh;
+    border-radius: 10%;
+}
+
+li button
+{
+    width: 8vw;
+    height: 8vh;
+    border-radius: 10%;
+}
