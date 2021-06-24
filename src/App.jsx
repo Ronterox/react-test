@@ -2,7 +2,7 @@ import './css/App.css'
 import {Fragment, useEffect, useRef, useState} from 'react';
 import {v4} from 'uuid';
 import TodoList from "./components/Todolist";
-import PWAPrompt from 'react-ios-pwa-prompt'
+import AddToHomeScreen from '@ideasio/add-to-homescreen-react';
 
 const KEY = "ricardo.todolist"
 
@@ -11,7 +11,11 @@ export default function App()
     const inputRef = useRef();
     const [myTodos, setTodos] = useState([]);
 
-    useEffect(() => setTodos(JSON.parse(localStorage.getItem(KEY))), []);
+    useEffect(() =>
+    {
+        const savedData = localStorage.getItem(KEY);
+        if (savedData !== undefined) setTodos(JSON.parse(savedData))
+    }, []);
     useEffect(() => localStorage.setItem(KEY, JSON.stringify(myTodos)), [myTodos]);
 
     function AddTask()
@@ -71,8 +75,7 @@ export default function App()
 
     return (
         <Fragment>
-            <PWAPrompt promptOnVisit={1} timesToShow={3} copyClosePrompt="Close" permanentlyHideOnDismiss={false}/>
-
+            <AddToHomeScreen/>
             <button className="add-button">Install Application</button>
             <h2>My List</h2>
 
