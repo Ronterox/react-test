@@ -3,6 +3,11 @@
     text-align: left !important;
 }
 
+.bg-green
+{
+    background-color: #78FF00 !important;
+}
+
 .icon-button-md
 {
     min-width: 50px;
