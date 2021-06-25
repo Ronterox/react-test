@@ -3,7 +3,7 @@ import Task from "./Task";
 export default function TodoList({ todos = [], toggleTodo, deleteTask, toggleEdition })
 {
     return (
-        <ul>
+        <ul className={"text-left border border-white p-5 my-5"}>
             {
                 todos.map(function (item)
                 {

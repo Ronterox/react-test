@@ -1,63 +1,9 @@
-/*
-body
+.text-left
 {
-    background-color: cornflowerblue;
-    text-align: center;
-    font-size: 3vh;
-    color: white;
-    margin: auto;
-    padding: 10vh;
-    border: solid white;
-    font-family: Verdana, serif;
-    text-shadow: .2em .2em #0002;
+    text-align: left !important;
 }
 
-ul
+.icon-button-md
 {
-    padding: 5vh;
-    border: solid white;
-    margin: auto;
-    width: fit-content;
-    box-shadow: .2em .2em #0002;
+    min-width: 50px;
 }
-
-li
-{
-    text-align: left;
-}
-
-input
-{
-    width: 25vw;
-    height: 5vh;
-    border-radius: 5%;
-    padding-left: 1vh;
-    box-shadow: .2em .2em #0002;
-}
-
-input[type=checkbox]
-{
-    width: 5vw;
-    height: 3vh;
-}
-
-button
-{
-    width: 10vw;
-    height: 8vh;
-    border-radius: 10%;
-    box-shadow: .2em .2em #0002;
-}
-
-li button
-{
-    width: 8vw;
-    height: 8vh;
-    border-radius: 10%;
-}
-
-.doneTask
-{
-    text-decoration: line-through;
-}
-*/

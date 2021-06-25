@@ -1,8 +1,9 @@
 import './css/App.css'
-import {Fragment, useEffect, useRef, useState} from 'react';
+import {useEffect, useRef, useState} from 'react';
 import {v4} from 'uuid';
 import TodoList from "./components/Todolist";
 import AddToHomeScreen from '@ideasio/add-to-homescreen-react';
+import {Button, Container, FormControl, InputGroup} from "react-bootstrap";
 
 const TODO_KEY = "ricardo.todolist"
 const SHOW_DONE_KEY = "ricardo.todolist.showDone"
@@ -82,23 +83,31 @@ export default function App()
     }
 
     return (
-        <Fragment>
-            <AddToHomeScreen/>
+        <Container className={"d-flex justify-content-center text-center p-5 bg-dark text-white"}>
+            <div>
+                <AddToHomeScreen/>
 
-            <h2>My List</h2>
-            <TodoList todos={showDoneTasks ? myTodos : myTodos.filter(element => !element.completed)}
-                      toggleTodo={ToggleTodo} deleteTask={RemoveTask} toggleEdition={ToggleEdition}/>
+                <h2>My List 📄</h2>
+                <TodoList todos={showDoneTasks ? myTodos : myTodos.filter(element => !element.completed)}
+                          toggleTodo={ToggleTodo} deleteTask={RemoveTask} toggleEdition={ToggleEdition}/>
 
-            <br/>
-            <input placeholder={"Write a task..."} ref={inputRef} type={"text"}/>
-            <button onClick={AddTask}>➕</button>
-            <button onClick={RemoveTasks} disabled={myTodos.length === 0}>🗑️</button>
+                <br/>
+                <InputGroup size={"sm"}>
+                    <InputGroup.Prepend><InputGroup.Text>Task</InputGroup.Text></InputGroup.Prepend>
+                    <FormControl style={{ maxWidth: '400px' }} type={"text"} ref={inputRef}
+                                 placeholder={"Write your task here..."}/>
+                    <Button className={"icon-button-md"} variant={"primary"} size={"lg"} onClick={AddTask}>+</Button>
+                    <Button className={"icon-button-md bg-danger"} variant={"primary"} size={"lg"} onClick={RemoveTasks}
+                            disabled={myTodos.length === 0 || myTodos.length === tasksLeft}>🗑️</Button>
+                </InputGroup>
 
-            <br/><br/>
-            <span>You have {tasksLeft} {tasksLeft === 1 ? 'Task' : 'Tasks'} left!</span>
-            <br/>
+                <br/><br/>
+                <span>You have {tasksLeft} {tasksLeft === 1 ? 'Task' : 'Tasks'} left!</span>
+                <br/>
 
-            <button onClick={FilterDoneTasks}>{showDoneTasks ? <>👁️‍🗨️</> : <>✖️</>}️</button>
-        </Fragment>
+                <Button className={"icon-button-md bg-white"} variant={"secondary"}
+                        onClick={FilterDoneTasks}>{showDoneTasks ? <>👁️‍🗨️</> : <>🚫</>}️</Button>
+            </div>
+        </Container>
     );
 }
