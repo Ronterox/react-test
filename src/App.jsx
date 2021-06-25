@@ -87,7 +87,8 @@ export default function App()
             <div>
                 <AddToHomeScreen/>
 
-                <h2>My List 📄</h2>
+                <h2>My List ☑️</h2>
+                <small>v0.8</small>
                 <TodoList todos={showDoneTasks ? myTodos : myTodos.filter(element => !element.completed)}
                           toggleTodo={ToggleTodo} deleteTask={RemoveTask} toggleEdition={ToggleEdition}/>
 
