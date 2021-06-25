@@ -4,19 +4,28 @@ import {v4} from 'uuid';
 import TodoList from "./components/Todolist";
 import AddToHomeScreen from '@ideasio/add-to-homescreen-react';
 
-const KEY = "ricardo.todolist"
+const TODO_KEY = "ricardo.todolist"
+const SHOW_DONE_KEY = "ricardo.todolist.showDone"
 
 export default function App()
 {
     const inputRef = useRef();
     const [myTodos, setTodos] = useState([]);
+    const [showDoneTasks, setShowDoneTasks] = useState(true);
 
+    //On start app
     useEffect(() =>
     {
-        const savedData = localStorage.getItem(KEY);
+        const savedData = localStorage.getItem(TODO_KEY);
+        const wasShowingDone = localStorage.getItem(SHOW_DONE_KEY);
+
         if (savedData !== undefined) setTodos(JSON.parse(savedData))
+        setShowDoneTasks(JSON.parse(wasShowingDone));
+
     }, []);
-    useEffect(() => localStorage.setItem(KEY, JSON.stringify(myTodos)), [myTodos]);
+
+    useEffect(() => localStorage.setItem(TODO_KEY, JSON.stringify(myTodos)), [myTodos]);
+    useEffect(() => localStorage.setItem(SHOW_DONE_KEY, JSON.stringify(showDoneTasks)), [showDoneTasks])
 
     function AddTask()
     {
@@ -66,7 +75,6 @@ export default function App()
     }
 
     const tasksLeft = myTodos.filter(element => !element.completed).length;
-    const [showDoneTasks, setShowDoneTasks] = useState(true);
 
     function FilterDoneTasks()
     {
@@ -76,9 +84,8 @@ export default function App()
     return (
         <Fragment>
             <AddToHomeScreen/>
-            <button className="add-button">Install Application</button>
-            <h2>My List</h2>
 
+            <h2>My List</h2>
             <TodoList todos={showDoneTasks ? myTodos : myTodos.filter(element => !element.completed)}
                       toggleTodo={ToggleTodo} deleteTask={RemoveTask} toggleEdition={ToggleEdition}/>
 

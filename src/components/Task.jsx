@@ -4,9 +4,9 @@ export default function Task({ todo, toggleTodo, deleteTask, toggleEdition })
 {
     const checkBoxTodo = (
         <>
-            <input type={"checkbox"} checked={todo.completed} onChange={() => toggleTodo(todo.id)}/>
+            <input className={"checkbox"} type={"checkbox"} checked={todo.completed} onChange={() => toggleTodo(todo.id)}/>
             {
-                todo.completed?<strike>{todo.text}</strike> : <>{todo.text}</>
+                todo.completed?<s>{todo.text}</s> : <span>{todo.text}</span>
             }
             &nbsp;
         </>
@@ -16,7 +16,7 @@ export default function Task({ todo, toggleTodo, deleteTask, toggleEdition })
 
     const inputBoxTodo = (
         <>
-            <input type={"text"} ref={inputRef} placeholder={todo.text}/>&nbsp;
+            <input type={"text"} ref={inputRef} placeholder={todo.text} defaultValue={todo.text}/>&nbsp;
         </>
     );
 
