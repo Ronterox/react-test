@@ -5,11 +5,14 @@ import TodoList from "./components/Todolist";
 import AddToHomeScreen from '@ideasio/add-to-homescreen-react';
 import {Button, Card, Container, FormControl, InputGroup, OverlayTrigger, Tooltip} from "react-bootstrap";
 import Signup from "./components/Signup";
+import {AuthProvider} from "./contexts/AuthContext";
+import {BrowserRouter, Switch, Route} from "react-router-dom";
+import Login from "./components/Login";
 
 const TODO_KEY = "ricardo.todolist"
 const SHOW_DONE_KEY = "ricardo.todolist.showDone"
 
-export function GetToolTip(text)
+export function getToolTip(text)
 {
     return <Tooltip id="tooltip-show-button">{text}️</Tooltip>;
 }
@@ -34,7 +37,7 @@ export default function App()
     useEffect(() => localStorage.setItem(TODO_KEY, JSON.stringify(myTodos)), [myTodos]);
     useEffect(() => localStorage.setItem(SHOW_DONE_KEY, JSON.stringify(showDoneTasks)), [showDoneTasks])
 
-    function AddTask()
+    function addTask()
     {
         const value = inputRef.current?.value;
 
@@ -44,17 +47,17 @@ export default function App()
         inputRef.current.value = '';
     }
 
-    function RemoveTasks()
+    function removeTasks()
     {
         setTodos(myTodos.filter(element => !element.completed));
     }
 
-    function RemoveTask(id)
+    function removeTask(id)
     {
         setTodos(myTodos.filter(element => element.id !== id));
     }
 
-    function ToggleTodo(id)
+    function toggleTodo(id)
     {
         setTodos(prevState =>
         {
@@ -67,7 +70,7 @@ export default function App()
         });
     }
 
-    function ToggleEdition(id, newValue)
+    function toggleEdition(id, newValue)
     {
         const copyTodos = [...myTodos]
 
@@ -83,12 +86,9 @@ export default function App()
 
     const tasksLeft = myTodos.filter(element => !element.completed).length;
 
-    function FilterDoneTasks()
-    {
-        setShowDoneTasks(!showDoneTasks);
-    }
+    function filterDoneTasks() { setShowDoneTasks(!showDoneTasks);}
 
-    const application =
+    const AppLayout = () => (
         <Container className={"d-flex justify-content-center align-items-center text-center p-5"} style={{ minHeight: "100vh" }}>
             <Card className={"w-100 bg-success"} style={{ maxWidth: "500px" }}>
                 <Card.Body>
@@ -97,36 +97,39 @@ export default function App()
                     <h2>My List ☑️</h2>
                     <small>v0.9</small>
 
-                    <TodoList todos={showDoneTasks ? myTodos : myTodos.filter(element => !element.completed)} toggleTodo={ToggleTodo} deleteTask={RemoveTask} toggleEdition={ToggleEdition}/>
+                    <TodoList todos={showDoneTasks ? myTodos : myTodos.filter(element => !element.completed)} toggleTodo={toggleTodo} deleteTask={removeTask} toggleEdition={toggleEdition}/>
 
                     <span>You have {tasksLeft} {tasksLeft === 1 ? 'task' : 'tasks'} left!</span>
                     <InputGroup size={"sm"}>
                         <FormControl style={{ maxWidth: '400px' }} type={"text"} ref={inputRef} placeholder={"Write your task here..."}/>
 
-                        <OverlayTrigger placement={"top"} overlay={GetToolTip("Add a task")}>
-                            <Button className={"icon-button-md"} variant={"primary"} size={"lg"} onClick={AddTask}>+</Button>
+                        <OverlayTrigger placement={"top"} overlay={getToolTip("Add a task")}>
+                            <Button className={"icon-button-md"} variant={"primary"} size={"lg"} onClick={addTask}>+</Button>
                         </OverlayTrigger>
 
-                        <OverlayTrigger placement={"top"} overlay={GetToolTip("Remove done tasks")}>
-                            <Button className={"icon-button-md bg-danger"} variant={"danger"} size={"lg"} onClick={RemoveTasks} disabled={myTodos.length === 0 || myTodos.length === tasksLeft}>🗑️</Button>
+                        <OverlayTrigger placement={"top"} overlay={getToolTip("Remove done tasks")}>
+                            <Button className={"icon-button-md bg-danger"} variant={"danger"} size={"lg"} onClick={removeTasks} disabled={myTodos.length === 0 || myTodos.length === tasksLeft}>🗑️</Button>
                         </OverlayTrigger>
                     </InputGroup>
 
                     <br/>
-                    <OverlayTrigger placement={"top"} overlay={GetToolTip(showDoneTasks ? 'Hide done tasks' : 'Show done tasks')}>
-                        <Button className={"icon-button-md bg-white"} variant={"light"} onClick={FilterDoneTasks}>{showDoneTasks ? <>👁️‍🗨️</> : <>🚫</>}️</Button>
+                    <OverlayTrigger placement={"top"} overlay={getToolTip(showDoneTasks ? 'Hide done tasks' : 'Show done tasks')}>
+                        <Button className={"icon-button-md bg-white"} variant={"light"} onClick={filterDoneTasks}>{showDoneTasks ? <>👁️‍🗨️</> : <>🚫</>}️</Button>
                     </OverlayTrigger>
                 </Card.Body>
             </Card>
-        </Container>;
-
-    const signup = <Container className={"d-flex align-items-center justify-content-center"} style={{ minHeight: "100vh" }}>
-        <div className={"w-100"} style={{ maxWidth: "400px" }}>
-            <Signup/>
-        </div>
-    </Container>;
+        </Container>
+    );
 
     return (
-        application
+        <BrowserRouter>
+            <AuthProvider>
+                <Switch>
+                    <Route exact path={"/"}><AppLayout/></Route>
+                    <Route path={"/signup"}><Signup/></Route>
+                    <Route path={"/login"}><Login/></Route>
+                </Switch>
+            </AuthProvider>
+        </BrowserRouter>
     );
 }

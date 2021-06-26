@@ -1,6 +1,6 @@
 import React, {useRef} from 'react';
 import {Button, Form, FormControl, OverlayTrigger} from "react-bootstrap";
-import { GetToolTip } from '../App'
+import { getToolTip } from '../App'
 
 export default function Task({ todo, toggleTodo, deleteTask, toggleEdition })
 {
@@ -33,11 +33,11 @@ export default function Task({ todo, toggleTodo, deleteTask, toggleEdition })
                     todo.completed ? null : (
                         <div>
 
-                            <OverlayTrigger placement={"top"} overlay={GetToolTip("Change task")}>
+                            <OverlayTrigger placement={"top"} overlay={getToolTip("Change task")}>
                                 <Button className={"bg-success"} variant={"success"} size={"sm"} onClick={() => toggleEdition(todo.id, inputRef.current?.value)}>✏️</Button>
                             </OverlayTrigger>
 
-                            <OverlayTrigger placement={"top"} overlay={GetToolTip("Delete task")}>
+                            <OverlayTrigger placement={"top"} overlay={getToolTip("Delete task")}>
                                 <Button className={"bg-danger"} variant={"danger"} size={"sm"} onClick={() => deleteTask(todo.id)}>🗑️</Button>
                             </OverlayTrigger>
                         </div>
