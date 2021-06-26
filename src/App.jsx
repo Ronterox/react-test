@@ -3,10 +3,15 @@ import {useEffect, useRef, useState} from 'react';
 import {v4} from 'uuid';
 import TodoList from "./components/Todolist";
 import AddToHomeScreen from '@ideasio/add-to-homescreen-react';
-import {Button, Container, FormControl, InputGroup} from "react-bootstrap";
+import {Button, Container, FormControl, InputGroup, OverlayTrigger, Tooltip} from "react-bootstrap";
 
 const TODO_KEY = "ricardo.todolist"
 const SHOW_DONE_KEY = "ricardo.todolist.showDone"
+
+export function GetToolTip(text)
+{
+    return <Tooltip id="tooltip-show-button">{text}️</Tooltip>;
+}
 
 export default function App()
 {
@@ -88,26 +93,27 @@ export default function App()
                 <AddToHomeScreen/>
 
                 <h2>My List ☑️</h2>
-                <small>v0.8</small>
-                <TodoList todos={showDoneTasks ? myTodos : myTodos.filter(element => !element.completed)}
-                          toggleTodo={ToggleTodo} deleteTask={RemoveTask} toggleEdition={ToggleEdition}/>
+                <small>v0.9</small>
 
-                <br/>
+                <TodoList todos={showDoneTasks ? myTodos : myTodos.filter(element => !element.completed)} toggleTodo={ToggleTodo} deleteTask={RemoveTask} toggleEdition={ToggleEdition}/>
+
+                <span>You have {tasksLeft} {tasksLeft === 1 ? 'task' : 'tasks'} left!</span>
                 <InputGroup size={"sm"}>
-                    <InputGroup.Prepend><InputGroup.Text>Task</InputGroup.Text></InputGroup.Prepend>
-                    <FormControl style={{ maxWidth: '400px' }} type={"text"} ref={inputRef}
-                                 placeholder={"Write your task here..."}/>
-                    <Button className={"icon-button-md"} variant={"primary"} size={"lg"} onClick={AddTask}>+</Button>
-                    <Button className={"icon-button-md bg-danger"} variant={"primary"} size={"lg"} onClick={RemoveTasks}
-                            disabled={myTodos.length === 0 || myTodos.length === tasksLeft}>🗑️</Button>
+                    <FormControl style={{ maxWidth: '400px' }} type={"text"} ref={inputRef} placeholder={"Write your task here..."}/>
+
+                    <OverlayTrigger placement={"top"} overlay={GetToolTip("Add a task")}>
+                        <Button className={"icon-button-md"} variant={"primary"} size={"lg"} onClick={AddTask}>+</Button>
+                    </OverlayTrigger>
+
+                    <OverlayTrigger placement={"top"} overlay={GetToolTip("Remove done tasks")}>
+                        <Button className={"icon-button-md bg-danger"} variant={"danger"} size={"lg"} onClick={RemoveTasks} disabled={myTodos.length === 0 || myTodos.length === tasksLeft}>🗑️</Button>
+                    </OverlayTrigger>
                 </InputGroup>
 
-                <br/><br/>
-                <span>You have {tasksLeft} {tasksLeft === 1 ? 'Task' : 'Tasks'} left!</span>
                 <br/>
-
-                <Button className={"icon-button-md bg-white"} variant={"secondary"}
-                        onClick={FilterDoneTasks}>{showDoneTasks ? <>👁️‍🗨️</> : <>🚫</>}️</Button>
+                <OverlayTrigger placement={"top"} overlay={GetToolTip(showDoneTasks ? 'Hide done tasks' : 'Show done tasks')}>
+                    <Button className={"icon-button-md bg-white"} variant={"light"} onClick={FilterDoneTasks}>{showDoneTasks ? <>👁️‍🗨️</> : <>🚫</>}️</Button>
+                </OverlayTrigger>
             </div>
         </Container>
     );
