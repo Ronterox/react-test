@@ -24,8 +24,8 @@ export default function Task({ todo, toggleTodo, deleteTask, toggleEdition })
     );
 
     return (
-        <li>
-            <div className={"d-flex justify-content-between"}>
+        <li style={{margin: "10% auto", width: "80%"}}>
+            <div className={"d-flex justify-content-between text-white"}>
                 {
                     todo.editing ? inputBoxTodo : checkBoxTodo
                 }
