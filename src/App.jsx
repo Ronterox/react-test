@@ -3,14 +3,15 @@ import {useEffect, useRef, useState} from 'react';
 import {v4} from 'uuid';
 import TodoList from "./components/Todolist";
 import AddToHomeScreen from '@ideasio/add-to-homescreen-react';
-import {Button, Card, Container, FormControl, InputGroup, OverlayTrigger, Tooltip} from "react-bootstrap";
+import {Button, Card, Container, FormControl, InputGroup, NavLink, OverlayTrigger, Tooltip} from "react-bootstrap";
 import Signup from "./components/Signup";
-import {AuthProvider} from "./contexts/AuthContext";
-import {BrowserRouter, Switch, Route} from "react-router-dom";
+import {AuthProvider, useAuth} from "./contexts/AuthContext";
+import {BrowserRouter, Switch, Route, useHistory} from "react-router-dom";
 import Login from "./components/Login";
+import {database} from "./firebase";
 
-const TODO_KEY = "ricardo.todolist"
-const SHOW_DONE_KEY = "ricardo.todolist.showDone"
+const DEFAULT_KEY = "default.todolist";
+const SHOW_DONE_KEY = "default.todolist.showDone";
 
 export function getToolTip(text)
 {
@@ -23,19 +24,38 @@ export default function App()
     const [myTodos, setTodos] = useState([]);
     const [showDoneTasks, setShowDoneTasks] = useState(true);
 
+    const [connectedUser, setConnectedUser] = useState();
+
     //On start app
     useEffect(() =>
     {
-        const savedData = localStorage.getItem(TODO_KEY);
+        const savedData = localStorage.getItem(DEFAULT_KEY);
         const wasShowingDone = localStorage.getItem(SHOW_DONE_KEY);
 
-        if (savedData !== undefined) setTodos(JSON.parse(savedData))
+        if (savedData) setTodos(JSON.parse(savedData))
         setShowDoneTasks(JSON.parse(wasShowingDone));
-
     }, []);
 
-    useEffect(() => localStorage.setItem(TODO_KEY, JSON.stringify(myTodos)), [myTodos]);
-    useEffect(() => localStorage.setItem(SHOW_DONE_KEY, JSON.stringify(showDoneTasks)), [showDoneTasks])
+    useEffect(() =>
+    {
+        const todoListJson = JSON.stringify(myTodos);
+        localStorage.setItem(DEFAULT_KEY, todoListJson);
+
+        if (connectedUser) database.child(connectedUser.uid).child("todolist").set(todoListJson).then(() => console.log('Uploaded data to firebase' + todoListJson));
+    }, [myTodos]);
+
+    useEffect(() =>
+    {
+        if (!connectedUser) return;
+
+        database.child(`/${connectedUser.uid}/todolist`).once("value").then(snapshot =>
+        {
+            const userUploadTodos = JSON.parse(snapshot.val());
+            if (myTodos !== userUploadTodos) setTodos(userUploadTodos);
+        });
+    }, [connectedUser]);
+
+    useEffect(() => localStorage.setItem(SHOW_DONE_KEY, JSON.stringify(showDoneTasks)), [showDoneTasks]);
 
     function addTask()
     {
@@ -88,46 +108,80 @@ export default function App()
 
     function filterDoneTasks() { setShowDoneTasks(!showDoneTasks);}
 
-    const AppLayout = () => (
-        <Container className={"d-flex justify-content-center align-items-center text-center p-5"} style={{ minHeight: "100vh" }}>
-            <Card className={"w-100 bg-success"} style={{ maxWidth: "500px" }}>
-                <Card.Body>
-                    <AddToHomeScreen/>
+    function AppLayout()
+    {
+        const { currentUser, logout } = useAuth();
+        const [loading, setLoading] = useState(false);
 
-                    <h2>My List ☑️</h2>
-                    <small>v0.9</small>
+        const history = useHistory();
+        setConnectedUser(currentUser);
 
-                    <TodoList todos={showDoneTasks ? myTodos : myTodos.filter(element => !element.completed)} toggleTodo={toggleTodo} deleteTask={removeTask} toggleEdition={toggleEdition}/>
+        async function handleLogout()
+        {
+            try
+            {
+                setLoading(true)
+                await logout();
+                history.push('/login');
+            }
+            catch (e)
+            {
+                console.log(e + '');
+            }
+            setLoading(false)
+        }
 
-                    <span>You have {tasksLeft} {tasksLeft === 1 ? 'task' : 'tasks'} left!</span>
-                    <InputGroup size={"sm"}>
-                        <FormControl style={{ maxWidth: '400px' }} type={"text"} ref={inputRef} placeholder={"Write your task here..."}/>
+        return (
+            <>
+                {
+                    (currentUser &&
+                        <div className={"text-white m-2"}>
+                            <h3>@{currentUser.email.split('@')[0]}</h3>
+                            <Button onClick={handleLogout} disabled={loading}>Log out</Button>
+                        </div>)
+                    || <NavLink href={"/login"}>Log in</NavLink>
+                }
+                <Container className={"d-flex justify-content-center align-items-center text-center p-5"} style={{ minHeight: "100vh" }}>
+                    <Card className={"w-100 bg-success"} style={{ maxWidth: "500px" }}>
+                        <Card.Body>
+                            <AddToHomeScreen/>
 
-                        <OverlayTrigger placement={"top"} overlay={getToolTip("Add a task")}>
-                            <Button className={"icon-button-md"} variant={"primary"} size={"lg"} onClick={addTask}>+</Button>
-                        </OverlayTrigger>
+                            <h2>My List ☑️</h2>
+                            <small>v1.0</small>
 
-                        <OverlayTrigger placement={"top"} overlay={getToolTip("Remove done tasks")}>
-                            <Button className={"icon-button-md bg-danger"} variant={"danger"} size={"lg"} onClick={removeTasks} disabled={myTodos.length === 0 || myTodos.length === tasksLeft}>🗑️</Button>
-                        </OverlayTrigger>
-                    </InputGroup>
+                            <TodoList todos={showDoneTasks ? myTodos : myTodos.filter(element => !element.completed)} toggleTodo={toggleTodo} deleteTask={removeTask} toggleEdition={toggleEdition}/>
 
-                    <br/>
-                    <OverlayTrigger placement={"top"} overlay={getToolTip(showDoneTasks ? 'Hide done tasks' : 'Show done tasks')}>
-                        <Button className={"icon-button-md bg-white"} variant={"light"} onClick={filterDoneTasks}>{showDoneTasks ? <>👁️‍🗨️</> : <>🚫</>}️</Button>
-                    </OverlayTrigger>
-                </Card.Body>
-            </Card>
-        </Container>
-    );
+                            <span>You have {tasksLeft} {tasksLeft === 1 ? 'task' : 'tasks'} left!</span>
+                            <InputGroup size={"sm"}>
+                                <FormControl style={{ maxWidth: '400px' }} type={"text"} ref={inputRef} placeholder={"Write your task here..."}/>
+
+                                <OverlayTrigger placement={"top"} overlay={getToolTip("Add a task")}>
+                                    <Button className={"icon-button-md"} variant={"primary"} size={"lg"} onClick={addTask}>+</Button>
+                                </OverlayTrigger>
+
+                                <OverlayTrigger placement={"top"} overlay={getToolTip("Remove done tasks")}>
+                                    <Button className={"icon-button-md bg-danger"} variant={"danger"} size={"lg"} onClick={removeTasks} disabled={myTodos.length === 0 || myTodos.length === tasksLeft}>🗑️</Button>
+                                </OverlayTrigger>
+                            </InputGroup>
+
+                            <br/>
+                            <OverlayTrigger placement={"top"} overlay={getToolTip(showDoneTasks ? 'Hide done tasks' : 'Show done tasks')}>
+                                <Button className={"icon-button-md bg-white"} variant={"light"} onClick={filterDoneTasks}>{showDoneTasks ? <>👁️‍🗨️</> : <>🚫</>}️</Button>
+                            </OverlayTrigger>
+                        </Card.Body>
+                    </Card>
+                </Container>
+            </>
+        );
+    }
 
     return (
         <BrowserRouter>
             <AuthProvider>
                 <Switch>
-                    <Route exact path={"/"}><AppLayout/></Route>
-                    <Route path={"/signup"}><Signup/></Route>
-                    <Route path={"/login"}><Login/></Route>
+                    <Route exact path={"/"} component={AppLayout}/>
+                    <Route path={"/signup"} component={Signup}/>
+                    <Route path={"/login"} component={Login}/>
                 </Switch>
             </AuthProvider>
         </BrowserRouter>

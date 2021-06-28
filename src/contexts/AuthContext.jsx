@@ -15,6 +15,16 @@ export function AuthProvider({ children })
         return auth.createUserWithEmailAndPassword(email, password);
     }
 
+    function login(email, password)
+    {
+        return auth.signInWithEmailAndPassword(email, password);
+    }
+
+    function logout()
+    {
+        return auth.signOut();
+    }
+
     useEffect(() =>
     {
         return auth.onAuthStateChanged(user =>
@@ -24,7 +34,7 @@ export function AuthProvider({ children })
         });
     }, []);
 
-    const values = { currentUser, signup }
+    const values = { currentUser, signup, login, logout }
 
     return (
         <AuthContext.Provider value={values}>

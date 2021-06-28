@@ -1,18 +1,37 @@
 import React, {useRef, useState} from 'react';
 import {Button, Card, Form, NavLink, Alert, Container} from "react-bootstrap";
-
+import {useAuth} from "../contexts/AuthContext";
+import {useHistory} from "react-router-dom";
 
 export default function Login()
 {
     const emailRef = useRef();
     const passwordRef = useRef();
 
+    const { login } = useAuth();
     const [message, setMessage] = useState({ text: '', variant: 'primary' });
     const [loading, setLoading] = useState(false);
+
+    const history = useHistory();
 
     async function handleSubmitLogin(event)
     {
         event.preventDefault();
+
+        try
+        {
+            setMessage(getMessage(''));
+            setLoading(true);
+            await login(emailRef.current?.value, passwordRef.current?.value);
+            setMessage(getMessage('Logged in sucessfully!', 'success'));
+            history.push('/');
+        }
+        catch (e)
+        {
+            setMessage(getMessage(e + '', 'danger'));
+        }
+
+        setLoading(false);
     }
 
     function getMessage(text, variant = 'primary')
@@ -41,6 +60,7 @@ export default function Login()
             </Card>
             <div className={"w-100 text-center mt-2"}>
                 <NavLink href={"/signup"}>Need an account? Sign Up</NavLink>
+                <Button variant={"secondary"} onClick={() => history.push('/')}>Back to App</Button>
             </div>
         </>
     );
