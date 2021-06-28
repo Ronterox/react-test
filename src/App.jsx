@@ -3,9 +3,9 @@ import {useEffect, useRef, useState} from 'react';
 import {v4} from 'uuid';
 import TodoList from "./components/Todolist";
 import AddToHomeScreen from '@ideasio/add-to-homescreen-react';
-import {Button, Card, Container, FormControl, InputGroup, OverlayTrigger, Tooltip} from "react-bootstrap";
+import {Button, Card, Container, FormControl, InputGroup, NavLink, OverlayTrigger, Tooltip} from "react-bootstrap";
 import Signup from "./components/Signup";
-import {AuthProvider} from "./contexts/AuthContext";
+import {AuthProvider, useAuth} from "./contexts/AuthContext";
 import {BrowserRouter, Switch, Route} from "react-router-dom";
 import Login from "./components/Login";
 
@@ -22,6 +22,8 @@ export default function App()
     const inputRef = useRef();
     const [myTodos, setTodos] = useState([]);
     const [showDoneTasks, setShowDoneTasks] = useState(true);
+
+    const { currentUser } = useAuth();
 
     //On start app
     useEffect(() =>
@@ -90,12 +92,13 @@ export default function App()
 
     const AppLayout = () => (
         <Container className={"d-flex justify-content-center align-items-center text-center p-5"} style={{ minHeight: "100vh" }}>
+            {(currentUser && <h3 className={"position-absolute text-white"}>{currentUser.email}</h3>) || <NavLink className={"position-absolute"} href={"/login"}>Log in</NavLink>}
             <Card className={"w-100 bg-success"} style={{ maxWidth: "500px" }}>
                 <Card.Body>
                     <AddToHomeScreen/>
 
                     <h2>My List ☑️</h2>
-                    <small>v0.9</small>
+                    <small>v1.0</small>
 
                     <TodoList todos={showDoneTasks ? myTodos : myTodos.filter(element => !element.completed)} toggleTodo={toggleTodo} deleteTask={removeTask} toggleEdition={toggleEdition}/>
 
@@ -125,9 +128,9 @@ export default function App()
         <BrowserRouter>
             <AuthProvider>
                 <Switch>
-                    <Route exact path={"/"}><AppLayout/></Route>
-                    <Route path={"/signup"}><Signup/></Route>
-                    <Route path={"/login"}><Login/></Route>
+                    <Route exact path={"/"} component={AppLayout}/>
+                    <Route path={"/signup"} component={Signup}/>
+                    <Route path={"/login"} component={Login}/>
                 </Switch>
             </AuthProvider>
         </BrowserRouter>
