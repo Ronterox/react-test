@@ -8,9 +8,10 @@ import Signup from "./components/Signup";
 import {AuthProvider, useAuth} from "./contexts/AuthContext";
 import {BrowserRouter, Switch, Route, useHistory} from "react-router-dom";
 import Login from "./components/Login";
+import {database} from "./firebase";
 
-const TODO_KEY = "ricardo.todolist"
-const SHOW_DONE_KEY = "ricardo.todolist.showDone"
+const DEFAULT_KEY = "default.todolist";
+const SHOW_DONE_KEY = "default.todolist.showDone";
 
 export function getToolTip(text)
 {
@@ -23,19 +24,38 @@ export default function App()
     const [myTodos, setTodos] = useState([]);
     const [showDoneTasks, setShowDoneTasks] = useState(true);
 
+    const [connectedUser, setConnectedUser] = useState();
+
     //On start app
     useEffect(() =>
     {
-        const savedData = localStorage.getItem(TODO_KEY);
+        const savedData = localStorage.getItem(DEFAULT_KEY);
         const wasShowingDone = localStorage.getItem(SHOW_DONE_KEY);
 
-        if (savedData !== undefined) setTodos(JSON.parse(savedData))
+        if (savedData) setTodos(JSON.parse(savedData))
         setShowDoneTasks(JSON.parse(wasShowingDone));
-
     }, []);
 
-    useEffect(() => localStorage.setItem(TODO_KEY, JSON.stringify(myTodos)), [myTodos]);
-    useEffect(() => localStorage.setItem(SHOW_DONE_KEY, JSON.stringify(showDoneTasks)), [showDoneTasks])
+    useEffect(() =>
+    {
+        const todoListJson = JSON.stringify(myTodos);
+        localStorage.setItem(DEFAULT_KEY, todoListJson);
+
+        if (connectedUser) database.child(connectedUser.uid).child("todolist").set(todoListJson).then(() => console.log('Uploaded data to firebase' + todoListJson));
+    }, [myTodos]);
+
+    useEffect(() =>
+    {
+        if (!connectedUser) return;
+
+        database.child(`/${connectedUser.uid}/todolist`).once("value").then(snapshot =>
+        {
+            const userUploadTodos = JSON.parse(snapshot.val());
+            if (myTodos !== userUploadTodos) setTodos(userUploadTodos);
+        });
+    }, [connectedUser]);
+
+    useEffect(() => localStorage.setItem(SHOW_DONE_KEY, JSON.stringify(showDoneTasks)), [showDoneTasks]);
 
     function addTask()
     {
@@ -94,6 +114,7 @@ export default function App()
         const [loading, setLoading] = useState(false);
 
         const history = useHistory();
+        setConnectedUser(currentUser);
 
         async function handleLogout()
         {
@@ -115,7 +136,7 @@ export default function App()
                 {
                     (currentUser &&
                         <div className={"text-white m-2"}>
-                            <h3>{currentUser.email.split('@')[0]}</h3>
+                            <h3>@{currentUser.email.split('@')[0]}</h3>
                             <Button onClick={handleLogout} disabled={loading}>Log out</Button>
                         </div>)
                     || <NavLink href={"/login"}>Log in</NavLink>
