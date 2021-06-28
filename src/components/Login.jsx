@@ -60,6 +60,7 @@ export default function Login()
             </Card>
             <div className={"w-100 text-center mt-2"}>
                 <NavLink href={"/signup"}>Need an account? Sign Up</NavLink>
+                <Button variant={"secondary"} onClick={() => history.push('/')}>Back to App</Button>
             </div>
         </>
     );

@@ -6,7 +6,7 @@ import AddToHomeScreen from '@ideasio/add-to-homescreen-react';
 import {Button, Card, Container, FormControl, InputGroup, NavLink, OverlayTrigger, Tooltip} from "react-bootstrap";
 import Signup from "./components/Signup";
 import {AuthProvider, useAuth} from "./contexts/AuthContext";
-import {BrowserRouter, Switch, Route} from "react-router-dom";
+import {BrowserRouter, Switch, Route, useHistory} from "react-router-dom";
 import Login from "./components/Login";
 
 const TODO_KEY = "ricardo.todolist"
@@ -22,8 +22,6 @@ export default function App()
     const inputRef = useRef();
     const [myTodos, setTodos] = useState([]);
     const [showDoneTasks, setShowDoneTasks] = useState(true);
-
-    const { currentUser } = useAuth();
 
     //On start app
     useEffect(() =>
@@ -90,39 +88,71 @@ export default function App()
 
     function filterDoneTasks() { setShowDoneTasks(!showDoneTasks);}
 
-    const AppLayout = () => (
-        <Container className={"d-flex justify-content-center align-items-center text-center p-5"} style={{ minHeight: "100vh" }}>
-            {(currentUser && <h3 className={"position-absolute text-white"}>{currentUser.email}</h3>) || <NavLink className={"position-absolute"} href={"/login"}>Log in</NavLink>}
-            <Card className={"w-100 bg-success"} style={{ maxWidth: "500px" }}>
-                <Card.Body>
-                    <AddToHomeScreen/>
+    function AppLayout()
+    {
+        const { currentUser, logout } = useAuth();
+        const [loading, setLoading] = useState(false);
 
-                    <h2>My List ☑️</h2>
-                    <small>v1.0</small>
+        const history = useHistory();
 
-                    <TodoList todos={showDoneTasks ? myTodos : myTodos.filter(element => !element.completed)} toggleTodo={toggleTodo} deleteTask={removeTask} toggleEdition={toggleEdition}/>
+        async function handleLogout()
+        {
+            try
+            {
+                setLoading(true)
+                await logout();
+                history.push('/login');
+            }
+            catch (e)
+            {
+                console.log(e + '');
+            }
+            setLoading(false)
+        }
 
-                    <span>You have {tasksLeft} {tasksLeft === 1 ? 'task' : 'tasks'} left!</span>
-                    <InputGroup size={"sm"}>
-                        <FormControl style={{ maxWidth: '400px' }} type={"text"} ref={inputRef} placeholder={"Write your task here..."}/>
+        return (
+            <>
+                {
+                    (currentUser &&
+                        <div className={"text-white m-2"}>
+                            <h3>{currentUser.email.split('@')[0]}</h3>
+                            <Button onClick={handleLogout} disabled={loading}>Log out</Button>
+                        </div>)
+                    || <NavLink href={"/login"}>Log in</NavLink>
+                }
+                <Container className={"d-flex justify-content-center align-items-center text-center p-5"} style={{ minHeight: "100vh" }}>
+                    <Card className={"w-100 bg-success"} style={{ maxWidth: "500px" }}>
+                        <Card.Body>
+                            <AddToHomeScreen/>
 
-                        <OverlayTrigger placement={"top"} overlay={getToolTip("Add a task")}>
-                            <Button className={"icon-button-md"} variant={"primary"} size={"lg"} onClick={addTask}>+</Button>
-                        </OverlayTrigger>
+                            <h2>My List ☑️</h2>
+                            <small>v1.0</small>
 
-                        <OverlayTrigger placement={"top"} overlay={getToolTip("Remove done tasks")}>
-                            <Button className={"icon-button-md bg-danger"} variant={"danger"} size={"lg"} onClick={removeTasks} disabled={myTodos.length === 0 || myTodos.length === tasksLeft}>🗑️</Button>
-                        </OverlayTrigger>
-                    </InputGroup>
+                            <TodoList todos={showDoneTasks ? myTodos : myTodos.filter(element => !element.completed)} toggleTodo={toggleTodo} deleteTask={removeTask} toggleEdition={toggleEdition}/>
 
-                    <br/>
-                    <OverlayTrigger placement={"top"} overlay={getToolTip(showDoneTasks ? 'Hide done tasks' : 'Show done tasks')}>
-                        <Button className={"icon-button-md bg-white"} variant={"light"} onClick={filterDoneTasks}>{showDoneTasks ? <>👁️‍🗨️</> : <>🚫</>}️</Button>
-                    </OverlayTrigger>
-                </Card.Body>
-            </Card>
-        </Container>
-    );
+                            <span>You have {tasksLeft} {tasksLeft === 1 ? 'task' : 'tasks'} left!</span>
+                            <InputGroup size={"sm"}>
+                                <FormControl style={{ maxWidth: '400px' }} type={"text"} ref={inputRef} placeholder={"Write your task here..."}/>
+
+                                <OverlayTrigger placement={"top"} overlay={getToolTip("Add a task")}>
+                                    <Button className={"icon-button-md"} variant={"primary"} size={"lg"} onClick={addTask}>+</Button>
+                                </OverlayTrigger>
+
+                                <OverlayTrigger placement={"top"} overlay={getToolTip("Remove done tasks")}>
+                                    <Button className={"icon-button-md bg-danger"} variant={"danger"} size={"lg"} onClick={removeTasks} disabled={myTodos.length === 0 || myTodos.length === tasksLeft}>🗑️</Button>
+                                </OverlayTrigger>
+                            </InputGroup>
+
+                            <br/>
+                            <OverlayTrigger placement={"top"} overlay={getToolTip(showDoneTasks ? 'Hide done tasks' : 'Show done tasks')}>
+                                <Button className={"icon-button-md bg-white"} variant={"light"} onClick={filterDoneTasks}>{showDoneTasks ? <>👁️‍🗨️</> : <>🚫</>}️</Button>
+                            </OverlayTrigger>
+                        </Card.Body>
+                    </Card>
+                </Container>
+            </>
+        );
+    }
 
     return (
         <BrowserRouter>
