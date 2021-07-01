@@ -9,7 +9,7 @@ export default function Task({ todo, toggleTodo, deleteTask, toggleEdition })
             <Form.Check className={"checkbox"} checked={todo.completed}
                         onChange={() => toggleTodo(todo.id)}/>
             {
-                todo.completed ? <s>{todo.text}</s> : <span>{todo.text}</span>
+                todo.completed ? <s>{todo.taskText}</s> : <span>{todo.taskText}</span>
             }
             &nbsp;
         </>
@@ -19,7 +19,7 @@ export default function Task({ todo, toggleTodo, deleteTask, toggleEdition })
 
     const inputBoxTodo = (
         <>
-            <FormControl className={"h-50"} ref={inputRef} placeholder={todo.text} defaultValue={todo.text}/>&nbsp;
+            <FormControl className={"h-50"} ref={inputRef} placeholder={todo.taskText} defaultValue={todo.taskText}/>&nbsp;
         </>
     );
 

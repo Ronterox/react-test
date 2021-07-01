@@ -2,7 +2,6 @@ import './css/App.css'
 import {useEffect, useRef, useState} from 'react';
 import {v4} from 'uuid';
 import TodoList from "./components/Todolist";
-import AddToHomeScreen from '@ideasio/add-to-homescreen-react';
 import {Button, Card, Container, FormControl, InputGroup, NavLink, OverlayTrigger, Tooltip} from "react-bootstrap";
 import Signup from "./components/Signup";
 import {AuthProvider, useAuth} from "./contexts/AuthContext";
@@ -13,9 +12,47 @@ import {database} from "./firebase";
 const DEFAULT_KEY = "default.todolist";
 const SHOW_DONE_KEY = "default.todolist.showDone";
 
-export function getToolTip(text)
+export function getToolTip(text) { return <Tooltip id="tooltip-show-button">{text}️</Tooltip>; }
+
+function getTime() { return Date.now(); }
+
+class TaskData
 {
-    return <Tooltip id="tooltip-show-button">{text}️</Tooltip>;
+    constructor(taskText)
+    {
+        this.id = v4();
+        this.taskText = taskText;
+        this.completed = false;
+        this.editing = false;
+        this.lastModfication = getTime();
+    }
+
+    setTask(task)
+    {
+        this.taskText = task.taskText;
+        this.completed = task.completed;
+        this.editing = task.editing;
+        this.lastModfication = task.lastModfication;
+    }
+
+    updateTaskParameter(props)
+    {
+        if (props.taskText !== undefined) this.taskText = props.taskText;
+        else if (props.completed !== undefined) this.completed = props.completed;
+        else if (props.editing !== undefined) this.editing = props.editing;
+        else return;
+
+        this.lastModfication = getTime();
+    }
+
+    updateTask(props)
+    {
+        if (props.taskText !== undefined) this.taskText = props.taskText;
+        if (props.completed !== undefined) this.completed = props.completed;
+        if (props.editing !== undefined) this.editing = props.editing;
+
+        this.lastModfication = getTime();
+    }
 }
 
 export default function App()
@@ -34,14 +71,24 @@ export default function App()
 
         if (savedData) setTodos(JSON.parse(savedData))
         setShowDoneTasks(JSON.parse(wasShowingDone));
+
+        /*
+        fetch('https://www.google.com/').then(() =>
+        {
+            console.log("Online");
+        }).catch(() =>
+        {
+            console.log("Offline");
+        });
+        */
+
     }, []);
 
     useEffect(() =>
     {
-        const todoListJson = JSON.stringify(myTodos);
-        localStorage.setItem(DEFAULT_KEY, todoListJson);
+        localStorage.setItem(DEFAULT_KEY, JSON.stringify(myTodos));
 
-        if (connectedUser) database.child(connectedUser.uid).child("todolist").set(todoListJson).then(() => console.log('Uploaded data to firebase' + todoListJson));
+        if (connectedUser) database.child(connectedUser.uid).child("todolist").set(myTodos).then();
     }, [myTodos]);
 
     useEffect(() =>
@@ -50,8 +97,18 @@ export default function App()
 
         database.child(`/${connectedUser.uid}/todolist`).once("value").then(snapshot =>
         {
-            const userUploadTodos = JSON.parse(snapshot.val());
-            if (myTodos !== userUploadTodos) setTodos(userUploadTodos);
+            const userUploadTodos = snapshot.val();
+            if (userUploadTodos && myTodos !== userUploadTodos)
+            {
+                myTodos.forEach(task =>
+                {
+                    const element = userUploadTodos.find(element => element.id === task.id);
+
+                    if (element && element.lastModfication < task.lastModfication) element.setTask(task);
+                    else userUploadTodos.push(task);
+                });
+                setTodos(userUploadTodos);
+            }
         });
     }, [connectedUser]);
 
@@ -61,21 +118,15 @@ export default function App()
     {
         const value = inputRef.current?.value;
 
-        if (value === '') return;
+        if (!value) return;
 
-        setTodos(prevState => [...prevState, { id: v4(), text: value, completed: false, editing: false }]);
+        setTodos(prevState => [...prevState, new TaskData(value)]);
         inputRef.current.value = '';
     }
 
-    function removeTasks()
-    {
-        setTodos(myTodos.filter(element => !element.completed));
-    }
+    function removeTasks() { setTodos(myTodos.filter(element => !element.completed)); }
 
-    function removeTask(id)
-    {
-        setTodos(myTodos.filter(element => element.id !== id));
-    }
+    function removeTask(id) { setTodos(myTodos.filter(element => element.id !== id)); }
 
     function toggleTodo(id)
     {
@@ -84,7 +135,7 @@ export default function App()
             const copyTodos = [...prevState]
 
             const element = copyTodos.find(element => element.id === id);
-            element.completed = !element.completed;
+            if (element) element.updateTaskParameter({ completed: !element.completed });
 
             return copyTodos;
         });
@@ -96,10 +147,10 @@ export default function App()
 
         const element = copyTodos.find(element => element.id === id);
 
-        if (element.editing && newValue !== '') element.text = newValue;
-        element.editing = !element.editing;
+        if (!element) return;
 
-        console.log(JSON.stringify(newValue));
+        if (element.editing && newValue && newValue !== element.taskText) element.updateTask({ editing: !element.editing, taskText: newValue });
+        else element.updateTaskParameter({ editing: !element.editing });
 
         setTodos(copyTodos);
     }
@@ -121,7 +172,7 @@ export default function App()
             try
             {
                 setLoading(true)
-                await logout();
+                await localStorage.delete(DEFAULT_KEY && SHOW_DONE_KEY) && logout();
                 history.push('/login');
             }
             catch (e)
@@ -144,10 +195,8 @@ export default function App()
                 <Container className={"d-flex justify-content-center align-items-center text-center p-5"} style={{ minHeight: "100vh" }}>
                     <Card className={"w-100 bg-success"} style={{ maxWidth: "500px" }}>
                         <Card.Body>
-                            <AddToHomeScreen/>
-
                             <h2>My List ☑️</h2>
-                            <small>v1.0</small>
+                            <small>v1.1</small>
 
                             <TodoList todos={showDoneTasks ? myTodos : myTodos.filter(element => !element.completed)} toggleTodo={toggleTodo} deleteTask={removeTask} toggleEdition={toggleEdition}/>
 
