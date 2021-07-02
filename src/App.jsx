@@ -1,5 +1,5 @@
 import './css/App.css'
-import {useEffect, useRef, useState} from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 import {v4} from 'uuid';
 import TodoList from "./components/Todolist";
 import {Button, Card, Container, FormControl, InputGroup, NavLink, OverlayTrigger, Tooltip} from "react-bootstrap";
@@ -84,14 +84,12 @@ export default function App()
 
     }, []);
 
-    useEffect(() =>
+    const uploadConnectedUserValues = useCallback(todos =>
     {
-        localStorage.setItem(DEFAULT_KEY, JSON.stringify(myTodos));
+        if (connectedUser) database.child(connectedUser.uid).child("todolist").set(todos).then();
+    }, [connectedUser]);
 
-        if (connectedUser) database.child(connectedUser.uid).child("todolist").set(myTodos).then();
-    }, [myTodos]);
-
-    useEffect(() =>
+    const downloadConnectedUserValues = useCallback(connectedUser =>
     {
         if (!connectedUser) return;
 
@@ -110,7 +108,15 @@ export default function App()
                 setTodos(userUploadTodos);
             }
         });
-    }, [connectedUser]);
+    }, [myTodos]);
+
+    useEffect(() =>
+    {
+        localStorage.setItem(DEFAULT_KEY, JSON.stringify(myTodos));
+        uploadConnectedUserValues(myTodos);
+    }, [myTodos, uploadConnectedUserValues]);
+
+    useEffect(() => downloadConnectedUserValues(), [connectedUser, downloadConnectedUserValues]);
 
     useEffect(() => localStorage.setItem(SHOW_DONE_KEY, JSON.stringify(showDoneTasks)), [showDoneTasks]);
 
