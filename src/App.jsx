@@ -1,7 +1,7 @@
 import './css/App.css'
 import {Button, Card, Container, FormControl, Image, InputGroup, NavLink, OverlayTrigger, Tooltip} from "react-bootstrap";
 import {BrowserRouter, Switch, Route, useHistory} from "react-router-dom";
-import {useCallback, useEffect, useRef, useState} from 'react';
+import {useEffect, useRef, useState} from 'react';
 import {AuthProvider, useAuth} from "./contexts/AuthContext";
 import TodoList from "./components/Todolist";
 import Signup from "./components/Signup";
@@ -12,6 +12,7 @@ import images from "./media/images";
 
 const DEFAULT_KEY = "default.todolist";
 const SHOW_DONE_KEY = "default.todolist.showDone";
+const LAST_USER = "default.todolist.lastUser";
 
 export function getToolTip(text) { return <Tooltip id="tooltip-show-button">{text}️</Tooltip>; }
 
@@ -29,6 +30,12 @@ class TaskData
     }
 
     setTask(task)
+    {
+        this.taskId = task.taskId;
+        this.setTaskValues(task);
+    }
+
+    setTaskValues(task)
     {
         this.taskText = task.taskText;
         this.isCompleted = task.isCompleted;
@@ -70,8 +77,8 @@ export default function App()
         const savedData = localStorage.getItem(DEFAULT_KEY);
         const wasShowingDone = localStorage.getItem(SHOW_DONE_KEY);
 
-        if (savedData) setTodos(JSON.parse(savedData))
-        setShowDoneTasks(JSON.parse(wasShowingDone));
+        //if (savedData) setTodos(JSON.parse(savedData))
+        //setShowDoneTasks(JSON.parse(wasShowingDone));
 
         /*
         fetch('https://www.google.com/').then(() =>
@@ -85,40 +92,53 @@ export default function App()
 
     }, []);
 
-    const uploadConnectedUserValues = useCallback(todos =>
-    {
-        if (connectedUser) database.child(connectedUser.uid).child("todolist").set(todos).then();
-    }, [connectedUser]);
-
-    const downloadConnectedUserValues = useCallback(connectedUser =>
+    useEffect(() =>
     {
         if (!connectedUser) return;
 
-        database.child(`/${connectedUser.uid}/todolist`).once("value").then(snapshot =>
+        const downloadConnectedUserValues = () =>
         {
-            const userUploadTodos = snapshot.val();
-            if (userUploadTodos && myTodos !== userUploadTodos)
+            database.child(`/${connectedUser.uid}/todolist`).once("value").then(snapshot =>
             {
-                myTodos.forEach(task =>
-                {
-                    const element = userUploadTodos.find(element => element.taskId === task.taskId);
+                const userUploadTodos = [];
 
-                    if (element && element.lastModfication < task.lastModfication) element.setTask(task);
-                    else userUploadTodos.push(task);
+                snapshot.val().forEach(data =>
+                {
+                    const taskData = new TaskData();
+                    taskData.setTask(data);
+
+                    userUploadTodos.push(taskData);
                 });
-                setTodos(userUploadTodos);
-            }
-        });
-    }, [myTodos]);
+                
+                if (userUploadTodos && myTodos !== userUploadTodos)
+                {
+                    myTodos.forEach(task =>
+                    {
+                        const element = userUploadTodos.find(element => element.taskId === task.taskId);
+
+                        if (element && element.lastModfication < task.lastModfication) element.setTaskValues(task);
+                        else userUploadTodos.push(task);
+                    });
+                    setTodos(userUploadTodos);
+                }
+            });
+        };
+        downloadConnectedUserValues();
+
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [connectedUser]);
 
     useEffect(() =>
     {
         localStorage.setItem(DEFAULT_KEY, JSON.stringify(myTodos));
-        uploadConnectedUserValues(myTodos);
 
-    }, [myTodos, uploadConnectedUserValues]);
+        if (!connectedUser) return;
 
-    useEffect(() => downloadConnectedUserValues(), [connectedUser, downloadConnectedUserValues]);
+        const uploadConnectedUserValues = () => database.child(connectedUser.uid).child("todolist").set(myTodos);
+        uploadConnectedUserValues().then(() => console.log("Uploaded values to database: " + JSON.stringify(myTodos)));
+
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [myTodos])
 
     useEffect(() => localStorage.setItem(SHOW_DONE_KEY, JSON.stringify(showDoneTasks)), [showDoneTasks]);
 
@@ -143,8 +163,6 @@ export default function App()
             const copyTodos = [...prevState]
 
             const element = copyTodos.find(element => element.taskId === id);
-            console.log("Type is " + typeof element + " and " + element instanceof TaskData);
-
             if (element) element.updateTaskParameter({ isCompleted: !element.isCompleted });
 
             return copyTodos;
