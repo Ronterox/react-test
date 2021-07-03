@@ -12,7 +12,6 @@ import images from "./media/images";
 
 const DEFAULT_KEY = "default.todolist";
 const SHOW_DONE_KEY = "default.todolist.showDone";
-const LAST_USER = "default.todolist.lastUser";
 
 export function getToolTip(text) { return <Tooltip id="tooltip-show-button">{text}️</Tooltip>; }
 
@@ -77,19 +76,8 @@ export default function App()
         const savedData = localStorage.getItem(DEFAULT_KEY);
         const wasShowingDone = localStorage.getItem(SHOW_DONE_KEY);
 
-        //if (savedData) setTodos(JSON.parse(savedData))
-        //setShowDoneTasks(JSON.parse(wasShowingDone));
-
-        /*
-        fetch('https://www.google.com/').then(() =>
-        {
-            console.log("Online");
-        }).catch(e =>
-        {
-            console.log("Offline" + e);
-        });
-        */
-
+        if (savedData) setTodos(JSON.parse(savedData))
+        setShowDoneTasks(JSON.parse(wasShowingDone));
     }, []);
 
     useEffect(() =>
@@ -102,14 +90,14 @@ export default function App()
             {
                 const userUploadTodos = [];
 
-                snapshot.val().forEach(data =>
+                snapshot.val()?.forEach(data =>
                 {
                     const taskData = new TaskData();
                     taskData.setTask(data);
 
                     userUploadTodos.push(taskData);
                 });
-                
+
                 if (userUploadTodos && myTodos !== userUploadTodos)
                 {
                     myTodos.forEach(task =>
@@ -117,7 +105,7 @@ export default function App()
                         const element = userUploadTodos.find(element => element.taskId === task.taskId);
 
                         if (element && element.lastModfication < task.lastModfication) element.setTaskValues(task);
-                        else userUploadTodos.push(task);
+                        else if (!element) userUploadTodos.push(task);
                     });
                     setTodos(userUploadTodos);
                 }
