@@ -12,6 +12,10 @@ import images from "./media/images";
 
 const DEFAULT_KEY = "default.todolist";
 const SHOW_DONE_KEY = "default.todolist.showDone";
+const DEVICE_KEY = "default.todolist.deviceId";
+
+const CHILD_DEVICE_TAG = "lastDeviceId";
+const CHILD_TODOLIST_TAG = "todolist";
 
 export function getToolTip(text) { return <Tooltip id="tooltip-show-button">{text}️</Tooltip>; }
 
@@ -69,6 +73,8 @@ export default function App()
     const [showDoneTasks, setShowDoneTasks] = useState(true);
 
     const [connectedUser, setConnectedUser] = useState();
+    const lastUserId = useRef();
+    const thisDeviceId = useRef();
 
     //On start app
     useEffect(() =>
@@ -76,52 +82,77 @@ export default function App()
         const savedData = localStorage.getItem(DEFAULT_KEY);
         const wasShowingDone = localStorage.getItem(SHOW_DONE_KEY);
 
-        const todos = [];
+        let localDevice = localStorage.getItem(DEVICE_KEY);
+        if (localDevice === 'undefined') localDevice = false;
 
-        JSON.parse(savedData).forEach(todo =>
+        thisDeviceId.current = localDevice || v4();
+
+        if (savedData)
         {
-            const taskData = new TaskData();
-            taskData.setTask(todo);
+            const todos = [];
 
-            todos.push(taskData);
-        });
+            JSON.parse(savedData).forEach(todo =>
+            {
+                const taskData = new TaskData();
+                taskData.setTask(todo);
 
-        if (savedData) setTodos(todos);
+                todos.push(taskData);
+            });
+
+            setTodos(todos);
+        }
+
         setShowDoneTasks(JSON.parse(wasShowingDone));
     }, []);
 
     useEffect(() =>
     {
+        const lastId = lastUserId.current;
+        if (lastId) database.child(`/${lastId}/${CHILD_DEVICE_TAG}`).off();
+
         if (!connectedUser) return;
 
-        const downloadConnectedUserValues = () =>
+        const setDownloadUserValues = snapshot =>
         {
-            database.child(`/${connectedUser.uid}/todolist`).once("value").then(snapshot =>
+            const userUploadTodos = [];
+
+            snapshot.val()?.forEach(data =>
             {
-                const userUploadTodos = [];
+                const taskData = new TaskData();
+                taskData.setTask(data);
 
-                snapshot.val()?.forEach(data =>
-                {
-                    const taskData = new TaskData();
-                    taskData.setTask(data);
-
-                    userUploadTodos.push(taskData);
-                });
-
-                if (userUploadTodos && myTodos !== userUploadTodos)
-                {
-                    myTodos.forEach(task =>
-                    {
-                        const element = userUploadTodos.find(element => element.taskId === task.taskId);
-
-                        if (element && element.lastModfication < task.lastModfication) element.setTaskValues(task);
-                        else if (!element) userUploadTodos.push(task);
-                    });
-                    setTodos(userUploadTodos);
-                }
+                userUploadTodos.push(taskData);
             });
+
+            if (userUploadTodos && myTodos !== userUploadTodos)
+            {
+                myTodos.forEach(task =>
+                {
+                    const element = userUploadTodos.find(element => element.taskId === task.taskId);
+
+                    if (element && element.lastModfication < task.lastModfication) element.setTaskValues(task);
+                    else if (!element) userUploadTodos.push(task);
+                });
+                setTodos(userUploadTodos);
+            }
         };
-        downloadConnectedUserValues();
+
+        let wasUpdated = false;
+
+        const downloadAndSetValues = () =>
+        {
+            wasUpdated = true;
+            database.child(`/${connectedUser.uid}/${CHILD_TODOLIST_TAG}`).once("value").then(snapshot => setDownloadUserValues(snapshot));
+        }
+
+        database.child(`/${lastUserId.current = connectedUser.uid}/${CHILD_DEVICE_TAG}`).on("value", snapshot =>
+        {
+            const lastDevice = snapshot.val();
+
+            if (lastDevice && lastDevice !== thisDeviceId.current) downloadAndSetValues();
+        });
+
+        if (!wasUpdated) downloadAndSetValues();
 
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [connectedUser]);
@@ -129,11 +160,18 @@ export default function App()
     useEffect(() =>
     {
         localStorage.setItem(DEFAULT_KEY, JSON.stringify(myTodos));
+        localStorage.setItem(DEVICE_KEY, thisDeviceId.current);
 
         if (!connectedUser) return;
 
-        const uploadConnectedUserValues = () => database.child(connectedUser.uid).child("todolist").set(myTodos);
-        uploadConnectedUserValues().then(() => console.log("Uploaded values to database: " + JSON.stringify(myTodos)));
+        const uploadConnectedUserValues = () =>
+        {
+            const userUrl = database.child(connectedUser.uid);
+            userUrl.child(CHILD_TODOLIST_TAG).set(myTodos).then(() => console.log("Uploaded values to database: " + JSON.stringify(myTodos)));
+            userUrl.child(CHILD_DEVICE_TAG).set(thisDeviceId.current).then(() => console.log("Setted device: " + thisDeviceId.current));
+        }
+
+        uploadConnectedUserValues();
 
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [myTodos])
@@ -199,7 +237,10 @@ export default function App()
             try
             {
                 setLoading(true)
-                await localStorage.delete(DEFAULT_KEY && SHOW_DONE_KEY) && logout();
+
+                localStorage.removeItem(DEFAULT_KEY && SHOW_DONE_KEY);
+                await logout();
+
                 history.push('/login');
             }
             catch (e)
@@ -213,7 +254,7 @@ export default function App()
             <>
                 {
                     (currentUser &&
-                        <div className={"m-2"}>
+                        <div className={"m-3"}>
                             <div>
                                 <Image src={images.defaultProfile} roundedCircle className={"profile-pic"}/>
                                 <h3 className={"text-danger"}>@{currentUser.email.split('@')[0]}</h3>
@@ -222,7 +263,7 @@ export default function App()
                         </div>)
                     || <NavLink href={"/login"}>Log in</NavLink>
                 }
-                <Container className={"d-flex justify-content-center align-items-center text-center p-5"} style={{ minHeight: "100vh" }}>
+                <Container className={"d-flex justify-content-center align-items-center text-center"}>
                     <Card className={"w-100 bg-success"} style={{ maxWidth: "500px" }}>
                         <Card.Body>
                             <h2>My List ☑️</h2>

@@ -1,6 +1,7 @@
 import React, {useRef, useState} from 'react';
 import {Button, Card, Form, NavLink, Alert, Container} from "react-bootstrap";
 import {useAuth} from "../contexts/AuthContext";
+import {useHistory} from "react-router-dom";
 
 
 export default function Signup()
@@ -12,6 +13,8 @@ export default function Signup()
     const { signup } = useAuth();
     const [message, setMessage] = useState({ text: '', variant: 'primary' });
     const [loading, setLoading] = useState(false);
+
+    const history = useHistory();
 
     async function handleSubmitSignup(event)
     {
@@ -66,6 +69,7 @@ export default function Signup()
             </Card>
             <div className={"w-100 text-center mt-2"}>
                 <NavLink href={"/login"}>Already have an account? Log In</NavLink>
+                <Button variant={"secondary"} onClick={() => history.push('/')}>Back to App</Button>
             </div>
         </>
     );
