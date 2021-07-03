@@ -1,13 +1,14 @@
 import './css/App.css'
-import {useCallback, useEffect, useRef, useState} from 'react';
-import {v4} from 'uuid';
-import TodoList from "./components/Todolist";
-import {Button, Card, Container, FormControl, InputGroup, NavLink, OverlayTrigger, Tooltip} from "react-bootstrap";
-import Signup from "./components/Signup";
-import {AuthProvider, useAuth} from "./contexts/AuthContext";
+import {Button, Card, Container, FormControl, Image, InputGroup, NavLink, OverlayTrigger, Tooltip} from "react-bootstrap";
 import {BrowserRouter, Switch, Route, useHistory} from "react-router-dom";
+import {useCallback, useEffect, useRef, useState} from 'react';
+import {AuthProvider, useAuth} from "./contexts/AuthContext";
+import TodoList from "./components/Todolist";
+import Signup from "./components/Signup";
 import Login from "./components/Login";
 import {database} from "./firebase";
+import {v4} from 'uuid';
+import images from "./media/images";
 
 const DEFAULT_KEY = "default.todolist";
 const SHOW_DONE_KEY = "default.todolist.showDone";
@@ -196,8 +197,11 @@ export default function App()
             <>
                 {
                     (currentUser &&
-                        <div className={"text-white m-2"}>
-                            <h3>@{currentUser.email.split('@')[0]}</h3>
+                        <div className={"m-2"}>
+                            <div>
+                                <Image src={images.defaultProfile} roundedCircle className={"profile-pic"}/>
+                                <h3 className={"text-danger"}>@{currentUser.email.split('@')[0]}</h3>
+                            </div>
                             <Button onClick={handleLogout} disabled={loading}>Log out</Button>
                         </div>)
                     || <NavLink href={"/login"}>Log in</NavLink>
