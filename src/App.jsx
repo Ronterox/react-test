@@ -20,26 +20,26 @@ class TaskData
 {
     constructor(taskText)
     {
-        this.id = v4();
+        this.taskId = v4();
         this.taskText = taskText;
-        this.completed = false;
-        this.editing = false;
+        this.isCompleted = false;
+        this.isEditing = false;
         this.lastModfication = getTime();
     }
 
     setTask(task)
     {
         this.taskText = task.taskText;
-        this.completed = task.completed;
-        this.editing = task.editing;
+        this.isCompleted = task.isCompleted;
+        this.isEditing = task.isEditing;
         this.lastModfication = task.lastModfication;
     }
 
     updateTaskParameter(props)
     {
-        if (props.taskText !== undefined) this.taskText = props.taskText;
-        else if (props.completed !== undefined) this.completed = props.completed;
-        else if (props.editing !== undefined) this.editing = props.editing;
+        if (props.taskText) this.taskText = props.taskText;
+        else if (props.isCompleted !== undefined) this.isCompleted = props.isCompleted;
+        else if (props.isEditing !== undefined) this.isEditing = props.isEditing;
         else return;
 
         this.lastModfication = getTime();
@@ -47,9 +47,9 @@ class TaskData
 
     updateTask(props)
     {
-        if (props.taskText !== undefined) this.taskText = props.taskText;
-        if (props.completed !== undefined) this.completed = props.completed;
-        if (props.editing !== undefined) this.editing = props.editing;
+        if (props.taskText) this.taskText = props.taskText;
+        if (props.isCompleted !== undefined) this.isCompleted = props.isCompleted;
+        if (props.isEditing !== undefined) this.isEditing = props.isEditing;
 
         this.lastModfication = getTime();
     }
@@ -76,9 +76,9 @@ export default function App()
         fetch('https://www.google.com/').then(() =>
         {
             console.log("Online");
-        }).catch(() =>
+        }).catch(e =>
         {
-            console.log("Offline");
+            console.log("Offline" + e);
         });
         */
 
@@ -100,7 +100,7 @@ export default function App()
             {
                 myTodos.forEach(task =>
                 {
-                    const element = userUploadTodos.find(element => element.id === task.id);
+                    const element = userUploadTodos.find(element => element.taskId === task.taskId);
 
                     if (element && element.lastModfication < task.lastModfication) element.setTask(task);
                     else userUploadTodos.push(task);
@@ -114,6 +114,7 @@ export default function App()
     {
         localStorage.setItem(DEFAULT_KEY, JSON.stringify(myTodos));
         uploadConnectedUserValues(myTodos);
+
     }, [myTodos, uploadConnectedUserValues]);
 
     useEffect(() => downloadConnectedUserValues(), [connectedUser, downloadConnectedUserValues]);
@@ -130,9 +131,9 @@ export default function App()
         inputRef.current.value = '';
     }
 
-    function removeTasks() { setTodos(myTodos.filter(element => !element.completed)); }
+    function removeTasks() { setTodos(myTodos.filter(element => !element.isCompleted)); }
 
-    function removeTask(id) { setTodos(myTodos.filter(element => element.id !== id)); }
+    function removeTask(id) { setTodos(myTodos.filter(element => element.taskId !== id)); }
 
     function toggleTodo(id)
     {
@@ -140,8 +141,10 @@ export default function App()
         {
             const copyTodos = [...prevState]
 
-            const element = copyTodos.find(element => element.id === id);
-            if (element) element.updateTaskParameter({ completed: !element.completed });
+            const element = copyTodos.find(element => element.taskId === id);
+            console.log("Type is " + typeof element + " and " + element instanceof TaskData);
+
+            if (element) element.updateTaskParameter({ isCompleted: !element.isCompleted });
 
             return copyTodos;
         });
@@ -151,17 +154,17 @@ export default function App()
     {
         const copyTodos = [...myTodos]
 
-        const element = copyTodos.find(element => element.id === id);
+        const element = copyTodos.find(element => element.taskId === id);
 
         if (!element) return;
 
-        if (element.editing && newValue && newValue !== element.taskText) element.updateTask({ editing: !element.editing, taskText: newValue });
-        else element.updateTaskParameter({ editing: !element.editing });
+        if (element.isEditing && newValue && newValue !== element.taskText) element.updateTask({ isEditing: !element.isEditing, taskText: newValue });
+        else element.updateTaskParameter({ isEditing: !element.isEditing });
 
         setTodos(copyTodos);
     }
 
-    const tasksLeft = myTodos.filter(element => !element.completed).length;
+    const tasksLeft = myTodos.filter(element => !element.isCompleted).length;
 
     function filterDoneTasks() { setShowDoneTasks(!showDoneTasks);}
 
@@ -171,7 +174,8 @@ export default function App()
         const [loading, setLoading] = useState(false);
 
         const history = useHistory();
-        setConnectedUser(currentUser);
+
+        useEffect(() => setConnectedUser(currentUser), [currentUser]);
 
         async function handleLogout()
         {
@@ -183,7 +187,7 @@ export default function App()
             }
             catch (e)
             {
-                console.log(e + '');
+                console.log(`Controlled error: ${e}`);
             }
             setLoading(false)
         }
@@ -204,7 +208,7 @@ export default function App()
                             <h2>My List ☑️</h2>
                             <small>v1.4</small>
 
-                            <TodoList todos={showDoneTasks ? myTodos : myTodos.filter(element => !element.completed)} toggleTodo={toggleTodo} deleteTask={removeTask} toggleEdition={toggleEdition}/>
+                            <TodoList todos={showDoneTasks ? myTodos : myTodos.filter(element => !element.isCompleted)} toggleTodo={toggleTodo} deleteTask={removeTask} toggleEdition={toggleEdition}/>
 
                             <span>You have {tasksLeft} {tasksLeft === 1 ? 'task' : 'tasks'} left!</span>
                             <InputGroup size={"sm"}>

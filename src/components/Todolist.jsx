@@ -5,9 +5,9 @@ export default function TodoList({ todos = [], toggleTodo, deleteTask, toggleEdi
     return (
         <ul className={"list-unstyled text-left border border-white bg-dark my-5"} style={{ minHeight: "150px" }}>
             {
-                todos.map(item =>
+                todos.map((item, index) =>
                 {
-                    return <Task key={item.id}
+                    return <Task key={index}
                                  todo={item}
                                  toggleTodo={toggleTodo}
                                  deleteTask={deleteTask}

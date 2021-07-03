@@ -6,10 +6,10 @@ export default function Task({ todo, toggleTodo, deleteTask, toggleEdition })
 {
     const checkBoxTodo = (
         <>
-            <Form.Check className={"checkbox"} checked={todo.completed}
-                        onChange={() => toggleTodo(todo.id)}/>
+            <Form.Check className={"checkbox"} checked={todo.isCompleted}
+                        onChange={() => toggleTodo(todo.taskId)}/>
             {
-                todo.completed ? <s>{todo.taskText}</s> : <span>{todo.taskText}</span>
+                todo.isCompleted ? <s>{todo.taskText}</s> : <span>{todo.taskText}</span>
             }
             &nbsp;
         </>
@@ -27,18 +27,18 @@ export default function Task({ todo, toggleTodo, deleteTask, toggleEdition })
         <li style={{margin: "10% auto", width: "80%"}}>
             <div className={"d-flex justify-content-between text-white"}>
                 {
-                    todo.editing ? inputBoxTodo : checkBoxTodo
+                    todo.isEditing ? inputBoxTodo : checkBoxTodo
                 }
                 {
-                    todo.completed ? null : (
+                    todo.isCompleted ? null : (
                         <div>
 
                             <OverlayTrigger placement={"top"} overlay={getToolTip("Change task")}>
-                                <Button className={"bg-success"} variant={"success"} size={"sm"} onClick={() => toggleEdition(todo.id, inputRef.current?.value)}>✏️</Button>
+                                <Button className={"bg-success"} variant={"success"} size={"sm"} onClick={() => toggleEdition(todo.taskId, inputRef.current?.value)}>✏️</Button>
                             </OverlayTrigger>
 
                             <OverlayTrigger placement={"top"} overlay={getToolTip("Delete task")}>
-                                <Button className={"bg-danger"} variant={"danger"} size={"sm"} onClick={() => deleteTask(todo.id)}>🗑️</Button>
+                                <Button className={"bg-danger"} variant={"danger"} size={"sm"} onClick={() => deleteTask(todo.taskId)}>🗑️</Button>
                             </OverlayTrigger>
                         </div>
                     )
