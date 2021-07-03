@@ -76,7 +76,17 @@ export default function App()
         const savedData = localStorage.getItem(DEFAULT_KEY);
         const wasShowingDone = localStorage.getItem(SHOW_DONE_KEY);
 
-        if (savedData) setTodos(JSON.parse(savedData))
+        const todos = [];
+
+        JSON.parse(savedData).forEach(todo =>
+        {
+            const taskData = new TaskData();
+            taskData.setTask(todo);
+
+            todos.push(taskData);
+        });
+
+        if (savedData) setTodos(todos);
         setShowDoneTasks(JSON.parse(wasShowingDone));
     }, []);
 
