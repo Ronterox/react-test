@@ -1,13 +1,14 @@
 import './css/App.css'
-import {useEffect, useRef, useState} from 'react';
-import {v4} from 'uuid';
-import TodoList from "./components/Todolist";
-import {Button, Card, Container, FormControl, InputGroup, NavLink, OverlayTrigger, Tooltip} from "react-bootstrap";
-import Signup from "./components/Signup";
-import {AuthProvider, useAuth} from "./contexts/AuthContext";
+import {Button, Card, Container, FormControl, Image, InputGroup, NavLink, OverlayTrigger, Tooltip} from "react-bootstrap";
 import {BrowserRouter, Switch, Route, useHistory} from "react-router-dom";
+import {useEffect, useRef, useState} from 'react';
+import {AuthProvider, useAuth} from "./contexts/AuthContext";
+import TodoList from "./components/Todolist";
+import Signup from "./components/Signup";
 import Login from "./components/Login";
 import {database} from "./firebase";
+import {v4} from 'uuid';
+import images from "./media/images";
 
 const DEFAULT_KEY = "default.todolist";
 const SHOW_DONE_KEY = "default.todolist.showDone";
@@ -20,26 +21,32 @@ class TaskData
 {
     constructor(taskText)
     {
-        this.id = v4();
+        this.taskId = v4();
         this.taskText = taskText;
-        this.completed = false;
-        this.editing = false;
+        this.isCompleted = false;
+        this.isEditing = false;
         this.lastModfication = getTime();
     }
 
     setTask(task)
     {
+        this.taskId = task.taskId;
+        this.setTaskValues(task);
+    }
+
+    setTaskValues(task)
+    {
         this.taskText = task.taskText;
-        this.completed = task.completed;
-        this.editing = task.editing;
+        this.isCompleted = task.isCompleted;
+        this.isEditing = task.isEditing;
         this.lastModfication = task.lastModfication;
     }
 
     updateTaskParameter(props)
     {
-        if (props.taskText !== undefined) this.taskText = props.taskText;
-        else if (props.completed !== undefined) this.completed = props.completed;
-        else if (props.editing !== undefined) this.editing = props.editing;
+        if (props.taskText) this.taskText = props.taskText;
+        else if (props.isCompleted !== undefined) this.isCompleted = props.isCompleted;
+        else if (props.isEditing !== undefined) this.isEditing = props.isEditing;
         else return;
 
         this.lastModfication = getTime();
@@ -47,9 +54,9 @@ class TaskData
 
     updateTask(props)
     {
-        if (props.taskText !== undefined) this.taskText = props.taskText;
-        if (props.completed !== undefined) this.completed = props.completed;
-        if (props.editing !== undefined) this.editing = props.editing;
+        if (props.taskText) this.taskText = props.taskText;
+        if (props.isCompleted !== undefined) this.isCompleted = props.isCompleted;
+        if (props.isEditing !== undefined) this.isEditing = props.isEditing;
 
         this.lastModfication = getTime();
     }
@@ -71,46 +78,55 @@ export default function App()
 
         if (savedData) setTodos(JSON.parse(savedData))
         setShowDoneTasks(JSON.parse(wasShowingDone));
-
-        /*
-        fetch('https://www.google.com/').then(() =>
-        {
-            console.log("Online");
-        }).catch(() =>
-        {
-            console.log("Offline");
-        });
-        */
-
     }, []);
-
-    useEffect(() =>
-    {
-        localStorage.setItem(DEFAULT_KEY, JSON.stringify(myTodos));
-
-        if (connectedUser) database.child(connectedUser.uid).child("todolist").set(myTodos).then();
-    }, [myTodos]);
 
     useEffect(() =>
     {
         if (!connectedUser) return;
 
-        database.child(`/${connectedUser.uid}/todolist`).once("value").then(snapshot =>
+        const downloadConnectedUserValues = () =>
         {
-            const userUploadTodos = snapshot.val();
-            if (userUploadTodos && myTodos !== userUploadTodos)
+            database.child(`/${connectedUser.uid}/todolist`).once("value").then(snapshot =>
             {
-                myTodos.forEach(task =>
-                {
-                    const element = userUploadTodos.find(element => element.id === task.id);
+                const userUploadTodos = [];
 
-                    if (element && element.lastModfication < task.lastModfication) element.setTask(task);
-                    else userUploadTodos.push(task);
+                snapshot.val()?.forEach(data =>
+                {
+                    const taskData = new TaskData();
+                    taskData.setTask(data);
+
+                    userUploadTodos.push(taskData);
                 });
-                setTodos(userUploadTodos);
-            }
-        });
+
+                if (userUploadTodos && myTodos !== userUploadTodos)
+                {
+                    myTodos.forEach(task =>
+                    {
+                        const element = userUploadTodos.find(element => element.taskId === task.taskId);
+
+                        if (element && element.lastModfication < task.lastModfication) element.setTaskValues(task);
+                        else if (!element) userUploadTodos.push(task);
+                    });
+                    setTodos(userUploadTodos);
+                }
+            });
+        };
+        downloadConnectedUserValues();
+
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [connectedUser]);
+
+    useEffect(() =>
+    {
+        localStorage.setItem(DEFAULT_KEY, JSON.stringify(myTodos));
+
+        if (!connectedUser) return;
+
+        const uploadConnectedUserValues = () => database.child(connectedUser.uid).child("todolist").set(myTodos);
+        uploadConnectedUserValues().then(() => console.log("Uploaded values to database: " + JSON.stringify(myTodos)));
+
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [myTodos])
 
     useEffect(() => localStorage.setItem(SHOW_DONE_KEY, JSON.stringify(showDoneTasks)), [showDoneTasks]);
 
@@ -124,9 +140,9 @@ export default function App()
         inputRef.current.value = '';
     }
 
-    function removeTasks() { setTodos(myTodos.filter(element => !element.completed)); }
+    function removeTasks() { setTodos(myTodos.filter(element => !element.isCompleted)); }
 
-    function removeTask(id) { setTodos(myTodos.filter(element => element.id !== id)); }
+    function removeTask(id) { setTodos(myTodos.filter(element => element.taskId !== id)); }
 
     function toggleTodo(id)
     {
@@ -134,8 +150,8 @@ export default function App()
         {
             const copyTodos = [...prevState]
 
-            const element = copyTodos.find(element => element.id === id);
-            if (element) element.updateTaskParameter({ completed: !element.completed });
+            const element = copyTodos.find(element => element.taskId === id);
+            if (element) element.updateTaskParameter({ isCompleted: !element.isCompleted });
 
             return copyTodos;
         });
@@ -145,17 +161,17 @@ export default function App()
     {
         const copyTodos = [...myTodos]
 
-        const element = copyTodos.find(element => element.id === id);
+        const element = copyTodos.find(element => element.taskId === id);
 
         if (!element) return;
 
-        if (element.editing && newValue && newValue !== element.taskText) element.updateTask({ editing: !element.editing, taskText: newValue });
-        else element.updateTaskParameter({ editing: !element.editing });
+        if (element.isEditing && newValue && newValue !== element.taskText) element.updateTask({ isEditing: !element.isEditing, taskText: newValue });
+        else element.updateTaskParameter({ isEditing: !element.isEditing });
 
         setTodos(copyTodos);
     }
 
-    const tasksLeft = myTodos.filter(element => !element.completed).length;
+    const tasksLeft = myTodos.filter(element => !element.isCompleted).length;
 
     function filterDoneTasks() { setShowDoneTasks(!showDoneTasks);}
 
@@ -165,7 +181,8 @@ export default function App()
         const [loading, setLoading] = useState(false);
 
         const history = useHistory();
-        setConnectedUser(currentUser);
+
+        useEffect(() => setConnectedUser(currentUser), [currentUser]);
 
         async function handleLogout()
         {
@@ -177,7 +194,7 @@ export default function App()
             }
             catch (e)
             {
-                console.log(e + '');
+                console.log(`Controlled error: ${e}`);
             }
             setLoading(false)
         }
@@ -186,8 +203,11 @@ export default function App()
             <>
                 {
                     (currentUser &&
-                        <div className={"text-white m-2"}>
-                            <h3>@{currentUser.email.split('@')[0]}</h3>
+                        <div className={"m-2"}>
+                            <div>
+                                <Image src={images.defaultProfile} roundedCircle className={"profile-pic"}/>
+                                <h3 className={"text-danger"}>@{currentUser.email.split('@')[0]}</h3>
+                            </div>
                             <Button onClick={handleLogout} disabled={loading}>Log out</Button>
                         </div>)
                     || <NavLink href={"/login"}>Log in</NavLink>
@@ -196,9 +216,9 @@ export default function App()
                     <Card className={"w-100 bg-success"} style={{ maxWidth: "500px" }}>
                         <Card.Body>
                             <h2>My List ☑️</h2>
-                            <small>v1.1</small>
+                            <small>v1.4</small>
 
-                            <TodoList todos={showDoneTasks ? myTodos : myTodos.filter(element => !element.completed)} toggleTodo={toggleTodo} deleteTask={removeTask} toggleEdition={toggleEdition}/>
+                            <TodoList todos={showDoneTasks ? myTodos : myTodos.filter(element => !element.isCompleted)} toggleTodo={toggleTodo} deleteTask={removeTask} toggleEdition={toggleEdition}/>
 
                             <span>You have {tasksLeft} {tasksLeft === 1 ? 'task' : 'tasks'} left!</span>
                             <InputGroup size={"sm"}>
