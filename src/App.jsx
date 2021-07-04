@@ -16,6 +16,9 @@ const DEVICE_KEY = "default.todolist.deviceId";
 
 const CHILD_DEVICE_TAG = "lastDeviceId";
 const CHILD_TODOLIST_TAG = "todolist";
+const CHILD_DELETED_TAG = "deletedTodos";
+
+const DELETED_TASKS_LENGHT_LIMIT = 10;
 
 export function getToolTip(text) { return <Tooltip id="tooltip-show-button">{text}️</Tooltip>; }
 
@@ -73,8 +76,23 @@ export default function App()
     const [showDoneTasks, setShowDoneTasks] = useState(true);
 
     const [connectedUser, setConnectedUser] = useState();
+
     const lastUserId = useRef();
     const thisDeviceId = useRef();
+
+    const isUserRefresh = useRef(false);
+
+    function updateTaskList(todos, isUser = true)
+    {
+        isUserRefresh.current = isUser;
+        setTodos(todos);
+    }
+
+    function obtainDeletedList()
+    {
+        const deletedDatabaseRef = database.child(`/${connectedUser.uid}/${CHILD_DELETED_TAG}`);
+        return deletedDatabaseRef.once('value');
+    }
 
     //On start app
     useEffect(() =>
@@ -99,7 +117,7 @@ export default function App()
                 todos.push(taskData);
             });
 
-            setTodos(todos);
+            updateTaskList(todos, false);
         }
 
         setShowDoneTasks(JSON.parse(wasShowingDone));
@@ -131,28 +149,28 @@ export default function App()
                     const element = userUploadTodos.find(element => element.taskId === task.taskId);
 
                     if (element && element.lastModfication < task.lastModfication) element.setTaskValues(task);
-                    else if (!element) userUploadTodos.push(task);
+                    else if (!element)
+                    {
+                        obtainDeletedList().then(deletedListSnapshot =>
+                        {
+                            const deletedElement = deletedListSnapshot.val().find(deleted => deleted.id === task.id)
+                            if (!deletedElement) userUploadTodos.push(task);
+                        });
+                    }
                 });
-                setTodos(userUploadTodos);
+                updateTaskList(userUploadTodos, false);
             }
         };
 
-        let wasUpdated = false;
-
-        const downloadAndSetValues = () =>
+        database.child(`/${lastUserId.current = connectedUser.uid}/${CHILD_TODOLIST_TAG}`).on("value", todolistSnapshot =>
         {
-            wasUpdated = true;
-            database.child(`/${connectedUser.uid}/${CHILD_TODOLIST_TAG}`).once("value").then(snapshot => setDownloadUserValues(snapshot));
-        }
-
-        database.child(`/${lastUserId.current = connectedUser.uid}/${CHILD_DEVICE_TAG}`).on("value", snapshot =>
-        {
-            const lastDevice = snapshot.val();
-
-            if (lastDevice && lastDevice !== thisDeviceId.current) downloadAndSetValues();
+            database.child(`/${connectedUser.uid}/${CHILD_DEVICE_TAG}`).once("value").then(deviceIdSnapshot =>
+                {
+                    const lastDevice = deviceIdSnapshot.val();
+                    if (lastDevice && lastDevice !== thisDeviceId.current) setDownloadUserValues(todolistSnapshot);
+                }
+            );
         });
-
-        if (!wasUpdated) downloadAndSetValues();
 
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [connectedUser]);
@@ -168,7 +186,7 @@ export default function App()
         {
             const userUrl = database.child(connectedUser.uid);
             userUrl.child(CHILD_TODOLIST_TAG).set(myTodos).then(() => console.log("Uploaded values to database: " + JSON.stringify(myTodos)));
-            userUrl.child(CHILD_DEVICE_TAG).set(thisDeviceId.current).then(() => console.log("Setted device: " + thisDeviceId.current));
+            if (isUserRefresh.current) userUrl.child(CHILD_DEVICE_TAG).set(thisDeviceId.current).then(() => console.log("Setted device: " + thisDeviceId.current));
         }
 
         uploadConnectedUserValues();
@@ -184,25 +202,53 @@ export default function App()
 
         if (!value) return;
 
-        setTodos(prevState => [...prevState, new TaskData(value)]);
+        updateTaskList([...myTodos, new TaskData(value)]);
         inputRef.current.value = '';
     }
 
-    function removeTasks() { setTodos(myTodos.filter(element => !element.isCompleted)); }
+    function updateRemovedList(values)
+    {
+        if (connectedUser)
+        {
+            obtainDeletedList().then(deletedListSnapshot =>
+            {
+                const deletedList = deletedListSnapshot.val();
+                const newDeletedList = [...deletedList || [], ...values];
 
-    function removeTask(id) { setTodos(myTodos.filter(element => element.taskId !== id)); }
+                if (newDeletedList.length > DELETED_TASKS_LENGHT_LIMIT) newDeletedList.splice(0, newDeletedList.length - DELETED_TASKS_LENGHT_LIMIT);
+
+                const deletedDatabaseRef = database.child(`/${connectedUser.uid}/${CHILD_DELETED_TAG}`);
+                deletedDatabaseRef.set(newDeletedList).then(() => console.log("Added deleted list data: " + JSON.stringify(newDeletedList)));
+            });
+        }
+    }
+
+    function removeTasks()
+    {
+        const completedTodos = myTodos.filter(element => element.isCompleted);
+
+        updateRemovedList(completedTodos);
+
+        updateTaskList(myTodos.filter(element => !element.isCompleted));
+    }
+
+    function removeTask(id)
+    {
+        const deletedElement = myTodos.find(element => element.taskId === id);
+
+        updateRemovedList([deletedElement]);
+
+        updateTaskList(myTodos.filter(element => element.taskId !== id));
+    }
 
     function toggleTodo(id)
     {
-        setTodos(prevState =>
-        {
-            const copyTodos = [...prevState]
+        const copyTodos = [...myTodos]
 
-            const element = copyTodos.find(element => element.taskId === id);
-            if (element) element.updateTaskParameter({ isCompleted: !element.isCompleted });
+        const element = copyTodos.find(element => element.taskId === id);
+        if (element) element.updateTaskParameter({ isCompleted: !element.isCompleted });
 
-            return copyTodos;
-        });
+        updateTaskList(copyTodos);
     }
 
     function toggleEdition(id, newValue)
@@ -216,7 +262,7 @@ export default function App()
         if (element.isEditing && newValue && newValue !== element.taskText) element.updateTask({ isEditing: !element.isEditing, taskText: newValue });
         else element.updateTaskParameter({ isEditing: !element.isEditing });
 
-        setTodos(copyTodos);
+        updateTaskList(copyTodos);
     }
 
     const tasksLeft = myTodos.filter(element => !element.isCompleted).length;
@@ -267,7 +313,7 @@ export default function App()
                     <Card className={"w-100 bg-success"} style={{ maxWidth: "500px" }}>
                         <Card.Body>
                             <h2>My List ☑️</h2>
-                            <small>v1.4</small>
+                            <small>v1.6</small>
 
                             <TodoList todos={showDoneTasks ? myTodos : myTodos.filter(element => !element.isCompleted)} toggleTodo={toggleTodo} deleteTask={removeTask} toggleEdition={toggleEdition}/>
 
