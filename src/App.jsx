@@ -10,9 +10,10 @@ import {database} from "./firebase";
 import {v4} from 'uuid';
 import images from "./media/images";
 import WhatsNew from "./components/WhatsNew";
-import PasswordForm from "./components/account/config/PasswordForm";
+import AccountForm from "./components/account/config/AccountForm";
 import Profile from "./components/account/config/Profile";
 import {PrivateRoute, PublicRoute} from "./components/utils/MyRoutes";
+import DeleteAccount from "./components/account/config/DeleteAccount";
 
 const DEFAULT_KEY = "default.todolist";
 const SHOW_DONE_KEY = "default.todolist.showDone";
@@ -85,18 +86,6 @@ export default function App()
     const thisDeviceId = useRef();
 
     const isUserRefresh = useRef(false);
-
-    function updateTaskList(todos, isUser = true)
-    {
-        isUserRefresh.current = isUser;
-        setTodos(todos);
-    }
-
-    function obtainDeletedList()
-    {
-        const deletedDatabaseRef = database.child(`/${connectedUser.uid}/${CHILD_DELETED_TAG}`);
-        return deletedDatabaseRef.once('value');
-    }
 
     //On start app
     useEffect(() =>
@@ -199,6 +188,18 @@ export default function App()
     }, [myTodos])
 
     useEffect(() => localStorage.setItem(SHOW_DONE_KEY, JSON.stringify(showDoneTasks)), [showDoneTasks]);
+
+    function updateTaskList(todos, isUser = true)
+    {
+        isUserRefresh.current = isUser;
+        setTodos(todos);
+    }
+
+    function obtainDeletedList()
+    {
+        const deletedDatabaseRef = database.child(`/${connectedUser.uid}/${CHILD_DELETED_TAG}`);
+        return deletedDatabaseRef.once('value');
+    }
 
     function addTask()
     {
@@ -304,12 +305,13 @@ export default function App()
             <>
                 {
                     (currentUser &&
-                        <div className={"m-3"}>
+                        <div className={"m-3 text-center"} style={{width: "115px"}}>
                             <div>
                                 <Image src={images.defaultProfile} roundedCircle className={"profile-pic"}/>
                                 <h3 className={"text-danger"}>@{currentUser.email.split('@')[0]}</h3>
+                                <NavLink className={"btn btn-primary text-dark"} href={"/profile"}>See Profile</NavLink>
                             </div>
-                            <Button onClick={handleLogout} disabled={loading}>Log out</Button>
+                            <Button className={"w-100"} onClick={handleLogout} variant={"danger"} disabled={loading}>Log out</Button>
                         </div>
                     )
                     || <NavLink href={"/login"}>Log in</NavLink>
@@ -352,11 +354,12 @@ export default function App()
             <AuthProvider>
                 <Switch>
                     <Route exact path={"/"} component={AppLayout}/>
+                    <Route path={"/whatsnew"} component={WhatsNew}/>
                     <PublicRoute path={"/signup"} component={Signup}/>
                     <PublicRoute path={"/login"} component={Login}/>
                     <PrivateRoute path={"/profile"} component={Profile}/>
-                    <PrivateRoute path={"/password-reset"} component={PasswordForm}/>
-                    <Route path={"/whatsnew"} component={WhatsNew}/>
+                    <PrivateRoute path={"/password-reset"} component={AccountForm}/>
+                    <PrivateRoute path={"/delete"} component={DeleteAccount}/>
                 </Switch>
             </AuthProvider>
         </BrowserRouter>

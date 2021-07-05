@@ -19,7 +19,8 @@ function Profile()
                     <br/>
                     <strong>Password: </strong>
                     <span>********</span>
-                    <NavLink className={"btn btn-primary text-white mt-2"} href={"/password-reset"}>Update Profile</NavLink>
+                    <NavLink className={"btn btn-primary text-dark mt-2"} href={"/password-reset"}>Update Profile</NavLink>
+                    <NavLink className={"btn btn-danger text-dark"} href={"/delete"}>Delete Account</NavLink>
                 </Card.Body>
             </Card>
             <div className={"w-100 text-center mt-2"}>

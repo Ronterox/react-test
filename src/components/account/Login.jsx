@@ -48,14 +48,15 @@ export default function Login()
                     <Form onSubmit={handleSubmitLogin}>
                         <Form.Group controlId={"email"}>
                             <Form.Label>Email</Form.Label>
-                            <Form.Control ref={emailRef} type={"email"} placeholder={"user@example.com"} required/>
+                            <Form.Control ref={emailRef} type={"email"} placeholder={"user@example.com"} defaultValue={emailRef.current?.value} required/>
                         </Form.Group>
                         <Form.Group controlId={"password"} className={"mt-2"}>
                             <Form.Label>Password</Form.Label>
-                            <Form.Control ref={passwordRef} type={"password"} placeholder={"Password example..."} required/>
+                            <Form.Control ref={passwordRef} type={"password"} placeholder={"Password example..."} defaultValue={passwordRef.current?.value} required/>
                         </Form.Group>
                         <Button className={"mt-5 w-100"} type={"Submit"} disabled={loading}>Log in</Button>
                     </Form>
+                    <NavLink className={"text-center bg-dark d-block"} href={"/forgot"}>Forgot password?</NavLink>
                 </Card.Body>
             </Card>
             <div className={"w-100 text-center mt-2"}>
