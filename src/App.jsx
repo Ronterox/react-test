@@ -9,6 +9,7 @@ import Login from "./components/Login";
 import {database} from "./firebase";
 import {v4} from 'uuid';
 import images from "./media/images";
+import WhatsNew from "./components/WhatsNew";
 
 const DEFAULT_KEY = "default.todolist";
 const SHOW_DONE_KEY = "default.todolist.showDone";
@@ -306,9 +307,11 @@ export default function App()
                                 <h3 className={"text-danger"}>@{currentUser.email.split('@')[0]}</h3>
                             </div>
                             <Button onClick={handleLogout} disabled={loading}>Log out</Button>
-                        </div>)
+                        </div>
+                    )
                     || <NavLink href={"/login"}>Log in</NavLink>
                 }
+                <NavLink className={"top-right"} href={"/whatsnew"}>What's new?</NavLink>
                 <Container className={"d-flex justify-content-center align-items-center text-center"}>
                     <Card className={"w-100 bg-success"} style={{ maxWidth: "500px" }}>
                         <Card.Body>
@@ -348,6 +351,7 @@ export default function App()
                     <Route exact path={"/"} component={AppLayout}/>
                     <Route path={"/signup"} component={Signup}/>
                     <Route path={"/login"} component={Login}/>
+                    <Route path={"/whatsnew"} component={WhatsNew}/>
                 </Switch>
             </AuthProvider>
         </BrowserRouter>

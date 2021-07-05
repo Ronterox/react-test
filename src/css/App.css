@@ -14,3 +14,11 @@
     height: 80px;
     border: #D9686B solid;
 }
+
+.top-right
+{
+    position: absolute;
+    top: 0;
+    right: 0;
+    font-size: 18px;
+}
