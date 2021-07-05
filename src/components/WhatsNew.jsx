@@ -55,7 +55,12 @@ export default function WhatsNew()
             version: "1.6", updates: ["App and web logo added", "Added \"What's new\" page"],
             bugs: ["Fixed deleting on multiple devices"]
         }),
+        new PatchNote({
+            version: "1.7 - Current Version", updates: ["Added Insta logging after sign up", "Can change account password and email", "Can delete account", "Layout and performance improvement for login and signup"],
+        })
     ];
+
+    versions.reverse();
 
     const WhatsNewLayout = () => (
         <>
@@ -72,7 +77,7 @@ export default function WhatsNew()
                 </Card.Body>
             </Card>
             <div className={"w-100 text-center mt-2"}>
-                <NavLink href={"/"} className={"btn-secondary text-white rounded m-auto"} style={{width: "120px"}}>Back to App</NavLink>
+                <NavLink href={"/"} className={"btn-secondary text-white rounded m-auto"} style={{ width: "120px" }}>Back to App</NavLink>
             </div>
         </>
     );
