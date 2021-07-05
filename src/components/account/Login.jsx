@@ -1,6 +1,6 @@
 import React, {useRef, useState} from 'react';
 import {Button, Card, Form, NavLink, Alert, Container} from "react-bootstrap";
-import {useAuth} from "../contexts/AuthContext";
+import {useAuth} from "../../contexts/AuthContext";
 import {useHistory} from "react-router-dom";
 
 export default function Login()
@@ -8,7 +8,7 @@ export default function Login()
     const emailRef = useRef();
     const passwordRef = useRef();
 
-    const { login } = useAuth();
+    const { login} = useAuth();
     const [message, setMessage] = useState({ text: '', variant: 'primary' });
     const [loading, setLoading] = useState(false);
 
@@ -20,21 +20,21 @@ export default function Login()
 
         try
         {
-            setMessage(getMessage(''));
+            setMessage(createMessage(''));
             setLoading(true);
             await login(emailRef.current?.value, passwordRef.current?.value);
-            setMessage(getMessage('Logged in sucessfully!', 'success'));
+            setMessage(createMessage('Logged in successfully!', 'success'));
             history.push('/');
         }
         catch (e)
         {
-            setMessage(getMessage(e + '', 'danger'));
+            setMessage(createMessage(e + '', 'danger'));
         }
 
         setLoading(false);
     }
 
-    function getMessage(text, variant = 'primary')
+    function createMessage(text, variant = 'primary')
     {
         return { text: text, variant: variant };
     }
@@ -48,11 +48,11 @@ export default function Login()
                     <Form onSubmit={handleSubmitLogin}>
                         <Form.Group controlId={"email"}>
                             <Form.Label>Email</Form.Label>
-                            <Form.Control ref={emailRef} type={"email"} required/>
+                            <Form.Control ref={emailRef} type={"email"} placeholder={"user@example.com"} required/>
                         </Form.Group>
-                        <Form.Group controlId={"password"}>
+                        <Form.Group controlId={"password"} className={"mt-2"}>
                             <Form.Label>Password</Form.Label>
-                            <Form.Control ref={passwordRef} type={"password"} required/>
+                            <Form.Control ref={passwordRef} type={"password"} placeholder={"Password example..."} required/>
                         </Form.Group>
                         <Button className={"mt-5 w-100"} type={"Submit"} disabled={loading}>Log in</Button>
                     </Form>
@@ -60,7 +60,7 @@ export default function Login()
             </Card>
             <div className={"w-100 text-center mt-2"}>
                 <NavLink href={"/signup"}>Need an account? Sign Up</NavLink>
-                <Button variant={"secondary"} onClick={() => history.push('/')}>Back to App</Button>
+                <NavLink href={"/"} className={"btn-secondary text-white rounded m-auto"} style={{width: "120px"}}>Back to App</NavLink>
             </div>
         </>
     );

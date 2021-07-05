@@ -3,13 +3,16 @@ import {Button, Card, Container, FormControl, Image, InputGroup, NavLink, Overla
 import {BrowserRouter, Switch, Route, useHistory} from "react-router-dom";
 import {useEffect, useRef, useState} from 'react';
 import {AuthProvider, useAuth} from "./contexts/AuthContext";
-import TodoList from "./components/Todolist";
-import Signup from "./components/Signup";
-import Login from "./components/Login";
+import TodoList from "./components/objects/Todolist";
+import Signup from "./components/account/Signup";
+import Login from "./components/account/Login";
 import {database} from "./firebase";
 import {v4} from 'uuid';
 import images from "./media/images";
 import WhatsNew from "./components/WhatsNew";
+import PasswordForm from "./components/account/config/PasswordForm";
+import Profile from "./components/account/config/Profile";
+import {PrivateRoute, PublicRoute} from "./components/utils/MyRoutes";
 
 const DEFAULT_KEY = "default.todolist";
 const SHOW_DONE_KEY = "default.todolist.showDone";
@@ -19,7 +22,7 @@ const CHILD_DEVICE_TAG = "lastDeviceId";
 const CHILD_TODOLIST_TAG = "todolist";
 const CHILD_DELETED_TAG = "deletedTodos";
 
-const DELETED_TASKS_LENGHT_LIMIT = 10;
+const DELETED_TASKS_LENGTH_LIMIT = 10;
 
 export function getToolTip(text) { return <Tooltip id="tooltip-show-button">{text}️</Tooltip>; }
 
@@ -187,7 +190,7 @@ export default function App()
         {
             const userUrl = database.child(connectedUser.uid);
             userUrl.child(CHILD_TODOLIST_TAG).set(myTodos).then(() => console.log("Uploaded values to database: " + JSON.stringify(myTodos)));
-            if (isUserRefresh.current) userUrl.child(CHILD_DEVICE_TAG).set(thisDeviceId.current).then(() => console.log("Setted device: " + thisDeviceId.current));
+            if (isUserRefresh.current) userUrl.child(CHILD_DEVICE_TAG).set(thisDeviceId.current).then(() => console.log("Set device: " + thisDeviceId.current));
         }
 
         uploadConnectedUserValues();
@@ -216,7 +219,7 @@ export default function App()
                 const deletedList = deletedListSnapshot.val();
                 const newDeletedList = [...deletedList || [], ...values];
 
-                if (newDeletedList.length > DELETED_TASKS_LENGHT_LIMIT) newDeletedList.splice(0, newDeletedList.length - DELETED_TASKS_LENGHT_LIMIT);
+                if (newDeletedList.length > DELETED_TASKS_LENGTH_LIMIT) newDeletedList.splice(0, newDeletedList.length - DELETED_TASKS_LENGTH_LIMIT);
 
                 const deletedDatabaseRef = database.child(`/${connectedUser.uid}/${CHILD_DELETED_TAG}`);
                 deletedDatabaseRef.set(newDeletedList).then(() => console.log("Added deleted list data: " + JSON.stringify(newDeletedList)));
@@ -316,7 +319,7 @@ export default function App()
                     <Card className={"w-100 bg-success"} style={{ maxWidth: "500px" }}>
                         <Card.Body>
                             <h2>My List ☑️</h2>
-                            <small>v1.6</small>
+                            <small>v1.7</small>
 
                             <TodoList todos={showDoneTasks ? myTodos : myTodos.filter(element => !element.isCompleted)} toggleTodo={toggleTodo} deleteTask={removeTask} toggleEdition={toggleEdition}/>
 
@@ -349,8 +352,10 @@ export default function App()
             <AuthProvider>
                 <Switch>
                     <Route exact path={"/"} component={AppLayout}/>
-                    <Route path={"/signup"} component={Signup}/>
-                    <Route path={"/login"} component={Login}/>
+                    <PublicRoute path={"/signup"} component={Signup}/>
+                    <PublicRoute path={"/login"} component={Login}/>
+                    <PrivateRoute path={"/profile"} component={Profile}/>
+                    <PrivateRoute path={"/password-reset"} component={PasswordForm}/>
                     <Route path={"/whatsnew"} component={WhatsNew}/>
                 </Switch>
             </AuthProvider>

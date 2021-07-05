@@ -1,7 +1,7 @@
 import React, {useRef, useState} from 'react';
 import {Button, Card, Form, NavLink, Alert, Container} from "react-bootstrap";
-import {useAuth} from "../contexts/AuthContext";
-import {useHistory} from "react-router-dom";
+import {useAuth} from "../../contexts/AuthContext";
+import {Redirect} from "react-router-dom";
 
 
 export default function Signup()
@@ -10,36 +10,43 @@ export default function Signup()
     const passwordRef = useRef();
     const repeatPasswordRef = useRef();
 
-    const { signup } = useAuth();
+    const { signup, login} = useAuth();
     const [message, setMessage] = useState({ text: '', variant: 'primary' });
     const [loading, setLoading] = useState(false);
 
-    const history = useHistory();
+    const [redirect, setRedirect] = useState(false);
 
     async function handleSubmitSignup(event)
     {
         event.preventDefault();
 
-        if (passwordRef.current?.value !== repeatPasswordRef.current?.value) return setMessage(getMessage('Passwords don\'t match', 'danger'));
+        if (passwordRef.current?.value !== repeatPasswordRef.current?.value) return setMessage(createMessage('Passwords don\'t match', 'danger'));
 
         try
         {
-            setMessage(getMessage(''));
+            setMessage(createMessage(''));
             setLoading(true);
 
-            await signup(emailRef.current?.value, passwordRef.current?.value);
+            const email = emailRef.current?.value;
+            const password = passwordRef.current?.value;
 
-            setMessage(getMessage("Account successfully created!", 'success'))
+            await signup(email, password);
+
+            setMessage(createMessage("Account successfully created!", 'success'))
+
+            await login(email, password);
+
+            setRedirect(true);
         }
         catch (e)
         {
-            setMessage(getMessage(e + '', 'danger'));
+            setMessage(createMessage(e + '', 'danger'));
         }
 
         setLoading(false);
     }
 
-    function getMessage(text, variant = 'primary')
+    function createMessage(text, variant = 'primary')
     {
         return { text: text, variant: variant };
     }
@@ -53,23 +60,24 @@ export default function Signup()
                     <Form onSubmit={handleSubmitSignup}>
                         <Form.Group controlId={"email"}>
                             <Form.Label>Email</Form.Label>
-                            <Form.Control ref={emailRef} type={"email"} required/>
+                            <Form.Control ref={emailRef} type={"email"} placeholder={"user@example.com"} required/>
                         </Form.Group>
-                        <Form.Group controlId={"password"}>
+                        <Form.Group controlId={"password"} className={"mt-2"}>
                             <Form.Label>Password</Form.Label>
-                            <Form.Control ref={passwordRef} type={"password"} required/>
+                            <Form.Control ref={passwordRef} type={"password"} placeholder={"Password example..."} required/>
                         </Form.Group>
-                        <Form.Group controlId={"repeat-password"}>
+                        <Form.Group controlId={"repeat-password"} className={"mt-2"}>
                             <Form.Label>Repeat Password</Form.Label>
-                            <Form.Control ref={repeatPasswordRef} type={"password"} required/>
+                            <Form.Control ref={repeatPasswordRef} type={"password"} placeholder={"Repeated password example..."} required/>
                         </Form.Group>
                         <Button className={"mt-5 w-100"} type={"Submit"} disabled={loading}>Sign up</Button>
+                        {redirect && <Redirect to={"/"}/>}
                     </Form>
                 </Card.Body>
             </Card>
             <div className={"w-100 text-center mt-2"}>
                 <NavLink href={"/login"}>Already have an account? Log In</NavLink>
-                <Button variant={"secondary"} onClick={() => history.push('/')}>Back to App</Button>
+                <NavLink href={"/"} className={"btn-secondary text-white rounded m-auto"} style={{ width: "120px" }}>Back to App</NavLink>
             </div>
         </>
     );

@@ -1,6 +1,6 @@
 import React, {useRef} from 'react';
 import {Button, Form, FormControl, OverlayTrigger} from "react-bootstrap";
-import { getToolTip } from '../App'
+import { getToolTip } from '../../App'
 
 export default function Task({ todo, toggleTodo, deleteTask, toggleEdition })
 {

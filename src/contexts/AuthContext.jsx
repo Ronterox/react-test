@@ -14,6 +14,14 @@ export function AuthProvider({ children })
 
     function login(email, password) { return auth.signInWithEmailAndPassword(email, password);}
 
+    function sendResetPasswordEmail(email) { return auth.sendPasswordResetEmail(email); }
+
+    function changeEmail(newEmail)
+    {
+        currentUser.email = newEmail;
+        return auth.updateCurrentUser(currentUser);
+    }
+
     function logout() { return auth.signOut(); }
 
     useEffect(() =>
