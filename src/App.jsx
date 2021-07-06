@@ -8,7 +8,6 @@ import Signup from "./components/account/Signup";
 import Login from "./components/account/Login";
 import {database} from "./firebase";
 import {v4} from 'uuid';
-import images from "./media/images";
 import WhatsNew from "./components/WhatsNew";
 import AccountForm from "./components/account/config/AccountForm";
 import Profile from "./components/account/config/Profile";
@@ -86,6 +85,8 @@ export default function App()
     const thisDeviceId = useRef();
 
     const isUserRefresh = useRef(false);
+
+    //TODO: Context Database
 
     //On start app
     useEffect(() =>
@@ -276,7 +277,7 @@ export default function App()
 
     function AppLayout()
     {
-        const { currentUser, logout } = useAuth();
+        const { currentUser, logout, userImage } = useAuth();
         const [loading, setLoading] = useState(false);
 
         const history = useHistory();
@@ -289,7 +290,9 @@ export default function App()
             {
                 setLoading(true)
 
-                localStorage.removeItem(DEFAULT_KEY && SHOW_DONE_KEY);
+                localStorage.removeItem(DEFAULT_KEY);
+                localStorage.removeItem(SHOW_DONE_KEY);
+
                 await logout();
 
                 history.push('/login');
@@ -305,9 +308,9 @@ export default function App()
             <>
                 {
                     (currentUser &&
-                        <div className={"m-3 text-center"} style={{width: "115px"}}>
+                        <div className={"m-3 text-center"} style={{ width: "115px" }}>
                             <div>
-                                <Image src={images.defaultProfile} roundedCircle className={"profile-pic"}/>
+                                <Image src={userImage} roundedCircle className={"profile-pic"}/>
                                 <h3 className={"text-danger"}>@{currentUser.email.split('@')[0]}</h3>
                                 <NavLink className={"btn btn-primary text-dark"} href={"/profile"}>See Profile</NavLink>
                             </div>
@@ -321,7 +324,7 @@ export default function App()
                     <Card className={"w-100 bg-success"} style={{ maxWidth: "500px" }}>
                         <Card.Body>
                             <h2>My List ☑️</h2>
-                            <small>v1.7</small>
+                            <small>v1.8</small>
 
                             <TodoList todos={showDoneTasks ? myTodos : myTodos.filter(element => !element.isCompleted)} toggleTodo={toggleTodo} deleteTask={removeTask} toggleEdition={toggleEdition}/>
 

@@ -2,6 +2,7 @@ import React, {useState} from 'react';
 import {Alert, Button, Card, Container, NavLink} from "react-bootstrap";
 import {useAuth} from "../../../contexts/AuthContext";
 import {useHistory} from "react-router-dom";
+import {database} from "../../../firebase";
 
 function DeleteAccount()
 {
@@ -18,9 +19,11 @@ function DeleteAccount()
             setMessage(createMessage(''));
             setLoading(true);
 
-            await currentUser.delete();
+            const userId = currentUser.uid;
 
-            setMessage(createMessage('', 'success'))
+            await currentUser.delete();
+            await database.child(userId).set(null);
+
             history.push("/");
         }
         catch (e)

@@ -1,18 +1,17 @@
 import React from 'react';
 import {Card, Container, Image, NavLink} from "react-bootstrap";
 import {useAuth} from "../../../contexts/AuthContext";
-import images from "../../../media/images";
 
 function Profile()
 {
-    const { currentUser } = useAuth();
+    const { currentUser, userImage } = useAuth();
 
     const ProfileLayout = () => (
         <>
             <Card className={"p-1"}>
                 <Card.Body>
                     <h1 className={"text-center"}>Profile</h1>
-                    <Image className={"d-block m-auto profile-pic"} src={images.defaultProfile} style={{ height: "125px", width: "125px" }} roundedCircle/>
+                    <Image className={"d-block m-auto profile-pic"} src={userImage} style={{ height: "125px", width: "125px" }} roundedCircle/>
                     <hr/>
                     <strong>Email: </strong>
                     <span>{currentUser.email}</span>

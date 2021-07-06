@@ -1,13 +1,19 @@
 import React, {useRef, useState} from 'react';
-import {Alert, Button, Card, Container, Form, NavLink} from "react-bootstrap";
+import {Alert, Button, Card, Container, Form, Image, NavLink} from "react-bootstrap";
 import {useAuth} from "../../../contexts/AuthContext";
 import {Redirect} from "react-router-dom";
+import FormFileInput from "react-bootstrap/FormFileInput";
+import images from "../../../media/images";
+import {storage} from "../../../firebase";
 
 function AccountForm()
 {
     const emailRef = useRef();
     const passwordRef = useRef();
     const repeatPasswordRef = useRef();
+
+    const [selectedFile, setSelectedFile] = useState(null);
+    const [progress, setProgress] = useState(0);
 
     const { currentUser } = useAuth();
     const [message, setMessage] = useState({ text: '', variant: 'primary' });
@@ -32,6 +38,21 @@ function AccountForm()
         if (newEmail) promises.push(currentUser.updateEmail(newEmail));
         if (newPassword) promises.push(currentUser.updatePassword(newPassword));
 
+        if (selectedFile)
+        {
+            const storageRef = storage.child(currentUser.uid);
+            const task = storageRef.put(selectedFile);
+
+            promises.push(task);
+
+            task.on("state_changed", uploadData =>
+            {
+                const percentage = uploadData.bytesTransferred / uploadData.totalBytes * 100;
+                setProgress(percentage);
+
+            }, error => setMessage(createMessage(error, "danger")));
+        }
+
         Promise.all(promises).then(() =>
         {
             setMessage(createMessage("Account successfully updated!", 'success'))
@@ -39,6 +60,12 @@ function AccountForm()
         }).catch(e => setMessage(createMessage(e + '', 'danger')));
 
         setLoading(false);
+    }
+
+    function handleFileChange(event)
+    {
+        const file = event.target.files[0];
+        if (file) setSelectedFile(file);
     }
 
     function createMessage(text, variant = 'primary')
@@ -56,6 +83,17 @@ function AccountForm()
                         <h2 className={"text-center mb-4"}>Update Account</h2>
                         {message.text && <Alert variant={message.variant}>{message.text}</Alert>}
                         <Form onSubmit={handleSubmitUpdate}>
+                            <Form.Group controlId={"picture"}>
+                                <div className={"d-flex m-auto"}>
+                                    <div>
+                                        <Form.Label>New Profile Picture</Form.Label>
+                                        <FormFileInput accept={"image/*"} onChange={handleFileChange}/>
+                                        <progress value={progress} max={100}/>
+                                    </div>
+                                    <Image src={selectedFile ? URL.createObjectURL(selectedFile) : images.defaultProfile} style={{ width: "100px", height: "100px" }}/>
+                                </div>
+                            </Form.Group>
+                            <hr/>
                             <Form.Group controlId={"email"}>
                                 <Form.Label>New Email</Form.Label>
                                 <Form.Control ref={emailRef} type={"email"} placeholder={currentUser.email} defaultValue={currentUser.email} required/>
@@ -81,6 +119,7 @@ function AccountForm()
             </>
         );
     }
+
     return (
         <Container className={"d-flex align-items-center justify-content-center"} style={{ height: "100vh" }}>
             <div className={"w-100"} style={{ maxWidth: "400px" }}>
