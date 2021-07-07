@@ -1,9 +1,10 @@
-import React, {Component} from 'react';
+import React, {Component, useState} from 'react';
 import {Card, Container, NavLink} from "react-bootstrap";
+import {databasePatchNotes} from "../firebase";
 
 class PatchNote extends Component
 {
-    constructor({ version, updates, bugs })
+    constructor({ version, updates = [], bugs = [] })
     {
         super({ version, updates, bugs });
         this.version = version;
@@ -37,49 +38,41 @@ class PatchNote extends Component
 
 export default function WhatsNew()
 {
-    //TODO: Store this on database
-    const versions = [
-        new PatchNote({
-            version: "Old",
-            updates: ["Add products", "Delete Products", "Mark as done", "Filter show/not done", "Save in memory"]
-        }),
-        new PatchNote({
-            version: "1.0",
-            updates: ["Redesign", "Tooltips", "Profile Creation"]
-        }),
-        new PatchNote({
-            version: "1.1",
-            updates: ["Online Database"]
-        }),
-        new PatchNote({ version: "1.2" }),
-        new PatchNote({ version: "1.3" }),
-        new PatchNote({
-            version: "1.4",
-            updates: ["Offline and Online working", "Performance Improvement", "Default Profile Pic"],
-            bugs: ["Fixed functional network"]
-        }),
-        new PatchNote({
-            version: "1.5",
-            updates: ["Update of multiple devices at the same time", "Added \"Go back to app button\" to the sign up screen"],
-            bugs: ["Fixed offline", "Fixed logout", "Fixed first open of app", "Fixed list size and profile distance"]
-        }),
-        new PatchNote({
-            version: "1.6",
-            updates: ["App and web logo added", "Added \"What's new\" page"],
-            bugs: ["Fixed deleting on multiple devices"]
-        }),
-        new PatchNote({
-            version: "1.7",
-            updates: ["Added Insta logging after sign up", "Can change account password and email", "Can delete account", "Layout and performance improvement for login and signup"]
-        }),
-        new PatchNote({
-            version: "1.8 - Current Version",
-            updates: ["Added deletion of deleted user data", "Users can change profile pic"],
-            bugs: ["Fixed remaining old account tasks after logout"]
-        })
-    ];
+    const [versions, setVersions] = useState([]);
 
-    versions.reverse();
+    const downloadVersions = () =>
+    {
+        databasePatchNotes.once("value").then(downloadedVersions => setVersions(Object.values(downloadedVersions.val())));
+        versions.reverse();
+    };
+
+    downloadVersions();
+
+    /*
+    const uploadPatchNote = patchNote =>
+    {
+        const { version, updates, bugs } = patchNote;
+
+        databasePatchNotes.once("value").then(downloadedVersions =>
+        {
+            const values = Object.values(downloadedVersions.val());
+            values.forEach((patchNote, index) =>
+            {
+                const splittedVersion = patchNote.version.split(' ');
+                if (splittedVersion.length > 1) values[index].version = splittedVersion[0];
+            });
+
+            databasePatchNotes.set(values).then(() => databasePatchNotes.child(patchNote.version).set({ version, updates, bugs }));
+        });
+    }
+
+    useEffect(() =>
+    {
+        uploadPatchNote(new PatchNote({ version: "1,9 - Current Version", updates: ["Added tasks grouping", "Online Patch Notes"], bugs: ["Fixed user image upload not showing user image"] }))
+    }, [])
+
+     */
+
 
     const WhatsNewLayout = () => (
         <>

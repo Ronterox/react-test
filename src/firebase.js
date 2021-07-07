@@ -18,4 +18,6 @@ export const auth = firebaseConfig.auth();
 
 export const database = firebaseConfig.database().ref("Users");
 
+export const databasePatchNotes = firebaseConfig.database().ref("Patch Notes");
+
 export const storage = firebaseConfig.storage().ref("Images");
