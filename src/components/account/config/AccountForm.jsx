@@ -2,8 +2,6 @@ import React, {useRef, useState} from 'react';
 import {Alert, Button, Card, Container, Form, Image, NavLink} from "react-bootstrap";
 import {useAuth} from "../../../contexts/AuthContext";
 import {Redirect} from "react-router-dom";
-import FormFileInput from "react-bootstrap/FormFileInput";
-import images from "../../../media/images";
 import {storage} from "../../../firebase";
 
 function AccountForm()
@@ -15,7 +13,7 @@ function AccountForm()
     const [selectedFile, setSelectedFile] = useState(null);
     const [progress, setProgress] = useState(0);
 
-    const { currentUser } = useAuth();
+    const { currentUser, userImage } = useAuth();
     const [message, setMessage] = useState({ text: '', variant: 'primary' });
     const [loading, setLoading] = useState(false);
 
@@ -68,10 +66,7 @@ function AccountForm()
         if (file) setSelectedFile(file);
     }
 
-    function createMessage(text, variant = 'primary')
-    {
-        return { text: text, variant: variant };
-    }
+    const createMessage = (text, variant = 'primary') => ({ text: text, variant: variant });
 
     const AccountFormLayout = () =>
     {
@@ -87,10 +82,10 @@ function AccountForm()
                                 <div className={"d-flex m-auto"}>
                                     <div>
                                         <Form.Label>New Profile Picture</Form.Label>
-                                        <FormFileInput accept={"image/*"} onChange={handleFileChange}/>
+                                        <Form.File accept={"image/*"} onChange={handleFileChange}/>
                                         <progress value={progress} max={100}/>
                                     </div>
-                                    <Image src={selectedFile ? URL.createObjectURL(selectedFile) : images.defaultProfile} style={{ width: "100px", height: "100px" }}/>
+                                    <Image src={selectedFile ? URL.createObjectURL(selectedFile) : userImage} style={{ width: "100px", height: "100px" }}/>
                                 </div>
                             </Form.Group>
                             <hr/>

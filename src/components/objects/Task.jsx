@@ -25,14 +25,13 @@ export default function Task({ todo, toggleTodo, deleteTask, toggleEdition })
 
     return (
         <li style={{margin: "10% auto", width: "80%"}}>
-            <div className={"d-flex justify-content-between text-white"}>
+            <div className={"d-flex justify-content-between"}>
                 {
                     todo.isEditing ? inputBoxTodo : checkBoxTodo
                 }
                 {
                     todo.isCompleted ? null : (
                         <div>
-
                             <OverlayTrigger placement={"top"} overlay={getToolTip("Change task")}>
                                 <Button className={"bg-success"} variant={"success"} size={"sm"} onClick={() => toggleEdition(todo.taskId, inputRef.current?.value)}>✏️</Button>
                             </OverlayTrigger>
