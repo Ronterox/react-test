@@ -4,7 +4,7 @@ import images from "../media/images";
 
 const AuthContext = React.createContext({});
 
-export function useAuth() { return useContext(AuthContext); }
+export const useAuth = () => useContext(AuthContext);
 
 export function AuthProvider({ children })
 {
@@ -12,11 +12,11 @@ export function AuthProvider({ children })
     const [loading, setLoading] = useState(true);
     const [userImage, setUserImage] = useState(null);
 
-    function signup(email, password) { return auth.createUserWithEmailAndPassword(email, password); }
+    const signup = (email, password) => auth.createUserWithEmailAndPassword(email, password);
 
-    function login(email, password) { return auth.signInWithEmailAndPassword(email, password);}
+    const login = (email, password) => auth.signInWithEmailAndPassword(email, password);
 
-    function logout() { return auth.signOut(); }
+    const logout = () => auth.signOut();
 
     useEffect(() =>
     {

@@ -46,10 +46,7 @@ export default function Signup()
         setLoading(false);
     }
 
-    function createMessage(text, variant = 'primary')
-    {
-        return { text: text, variant: variant };
-    }
+    const createMessage = (text, variant = 'primary') => ({ text: text, variant: variant });
 
     const SignupLayout = () => (
         <>
