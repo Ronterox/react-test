@@ -1,13 +1,12 @@
 import React, {useRef} from 'react';
 import {Button, Form, FormControl, OverlayTrigger} from "react-bootstrap";
-import { getToolTip } from '../../App'
+import {getToolTip} from '../../App'
 
-export default function Task({ todo, toggleTodo, deleteTask, toggleEdition })
+export default function Task({ todo, toggleTodo, deleteTask, toggleEdition, changeGroup })
 {
     const checkBoxTodo = (
         <>
-            <Form.Check className={"checkbox"} checked={todo.isCompleted}
-                        onChange={() => toggleTodo(todo.taskId)}/>
+            <Form.Check className={"checkbox"} checked={todo.isCompleted} onChange={() => toggleTodo(todo.taskId)}/>
             {
                 todo.isCompleted ? <s>{todo.taskText}</s> : <span>{todo.taskText}</span>
             }
@@ -24,7 +23,7 @@ export default function Task({ todo, toggleTodo, deleteTask, toggleEdition })
     );
 
     return (
-        <li style={{margin: "10% auto", width: "80%"}}>
+        <li style={{ margin: "10% auto", width: "80%" }}>
             <div className={"d-flex justify-content-between"}>
                 {
                     todo.isEditing ? inputBoxTodo : checkBoxTodo
@@ -32,6 +31,10 @@ export default function Task({ todo, toggleTodo, deleteTask, toggleEdition })
                 {
                     todo.isCompleted ? null : (
                         <div>
+                            <OverlayTrigger placement={"top"} overlay={getToolTip("Change group")}>
+                                <Button variant={"primary"} size={"sm"} onClick={() => changeGroup(todo.taskId)}>⬆️</Button>
+                            </OverlayTrigger>
+
                             <OverlayTrigger placement={"top"} overlay={getToolTip("Change task")}>
                                 <Button className={"bg-success"} variant={"success"} size={"sm"} onClick={() => toggleEdition(todo.taskId, inputRef.current?.value)}>✏️</Button>
                             </OverlayTrigger>

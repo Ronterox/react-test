@@ -3,7 +3,7 @@ import {Button, Card, Container, FormControl, Image, InputGroup, NavLink, Overla
 import {BrowserRouter, Switch, Route, useHistory} from "react-router-dom";
 import {useEffect, useRef, useState} from 'react';
 import {AuthProvider, useAuth} from "./contexts/AuthContext";
-import TodoList from "./components/objects/Todolist";
+import TodoList, {DEFAULT_LIST_NAME} from "./components/objects/Todolist";
 import Signup from "./components/account/Signup";
 import Login from "./components/account/Login";
 import {database} from "./firebase";
@@ -14,9 +14,11 @@ import Profile from "./components/account/config/Profile";
 import {PrivateRoute, PublicRoute} from "./components/utils/MyRoutes";
 import DeleteAccount from "./components/account/config/DeleteAccount";
 
-const DEFAULT_KEY = "default.todolist";
-const SHOW_DONE_KEY = "default.todolist.showDone";
-const DEVICE_KEY = "default.todolist.deviceId";
+const UNNECESSARY_TEXT = "default.todolist.";
+
+const DEFAULT_KEY = UNNECESSARY_TEXT + "lists";
+const SHOW_DONE_KEY = UNNECESSARY_TEXT + "showDone";
+const DEVICE_KEY = UNNECESSARY_TEXT + "deviceId";
 
 const CHILD_DEVICE_TAG = "lastDeviceId";
 const CHILD_TODOLIST_TAG = "todolist";
@@ -24,9 +26,9 @@ const CHILD_DELETED_TAG = "deletedTodos";
 
 const DELETED_TASKS_LENGTH_LIMIT = 10;
 
-export function getToolTip(text) { return <Tooltip id="tooltip-show-button">{text}️</Tooltip>; }
+export const getToolTip = text => <Tooltip id="tooltip-show-button">{text}️</Tooltip>;
 
-function getTime() { return Date.now(); }
+const getTime = () => Date.now();
 
 class TaskData
 {
@@ -71,13 +73,21 @@ class TaskData
 
         this.lastModfication = getTime();
     }
+
+    static createTask(task)
+    {
+        const taskData = new TaskData();
+        taskData.setTask(task);
+
+        return taskData;
+    }
 }
 
 export default function App()
 {
-    const inputRef = useRef();
     const [myTodos, setTodos] = useState([]);
     const [showDoneTasks, setShowDoneTasks] = useState(true);
+    const inputRef = useRef();
 
     const [connectedUser, setConnectedUser] = useState();
 
@@ -105,10 +115,14 @@ export default function App()
 
             JSON.parse(savedData).forEach(todo =>
             {
-                const taskData = new TaskData();
-                taskData.setTask(todo);
-
-                todos.push(taskData);
+                if (todo.tasks)
+                {
+                    const todolist = [];
+                    todo.tasks.forEach(task => todolist.push(TaskData.createTask(task)));
+                    todos.push({ listName: todo.listName, tasks: todolist });
+                }
+                else if (todo.taskId) todos.push(TaskData.createTask(todo));
+                else todos.push(todo);
             });
 
             updateTaskList(todos, false);
@@ -120,7 +134,7 @@ export default function App()
     useEffect(() =>
     {
         const lastId = lastUserId.current;
-        if (lastId) database.child(`/${lastId}/${CHILD_DEVICE_TAG}`).off();
+        if (lastId) database.child(`/${lastId}/${CHILD_TODOLIST_TAG}`).off();
 
         if (!connectedUser) return;
 
@@ -128,28 +142,60 @@ export default function App()
         {
             const userUploadTodos = [];
 
-            snapshot.val()?.forEach(data =>
+            const allLists = snapshot.val();
+            allLists?.forEach(element =>
             {
-                const taskData = new TaskData();
-                taskData.setTask(data);
+                if (element)
+                {
+                    if (element.tasks)
+                    {
+                        const todoList = [];
 
-                userUploadTodos.push(taskData);
+                        element.tasks.forEach(task => todoList.push(TaskData.createTask(task)));
+
+                        userUploadTodos.push(todoList);
+                    }
+                    else if (element.taskId) userUploadTodos.push(TaskData.createTask(element));
+                }
             });
 
             if (userUploadTodos && myTodos !== userUploadTodos)
             {
-                myTodos.forEach(task =>
+                myTodos.forEach((todoList, index) =>
                 {
-                    const element = userUploadTodos.find(element => element.taskId === task.taskId);
-
-                    if (element && element.lastModfication < task.lastModfication) element.setTaskValues(task);
-                    else if (!element)
+                    if (userUploadTodos[index])
                     {
-                        obtainDeletedList().then(deletedListSnapshot =>
+                        if (userUploadTodos[index].tasks)
                         {
-                            const deletedElement = deletedListSnapshot.val().find(deleted => deleted.id === task.id)
-                            if (!deletedElement) userUploadTodos.push(task);
-                        });
+                            todoList.forEach(task =>
+                            {
+                                const element = userUploadTodos[index].tasks.find(element => element.taskId === task.taskId);
+
+                                if (element && element.lastModfication < task.lastModfication) element.setTaskValues(task);
+                                else if (!element)
+                                {
+                                    obtainDeletedList().then(deletedListSnapshot =>
+                                    {
+                                        const deletedElement = deletedListSnapshot.val().find(deleted => deleted.id === task.id)
+                                        if (!deletedElement) userUploadTodos[index].push(task);
+                                    });
+                                }
+                            });
+                        }
+                        else if (userUploadTodos[index].taskId)
+                        {
+                            const element = userUploadTodos[index];
+
+                            if (element.lastModfication < todoList.lastModfication) element.setTaskValues(todoList);
+                            else if (!element)
+                            {
+                                obtainDeletedList().then(deletedListSnapshot =>
+                                {
+                                    const deletedElement = deletedListSnapshot.val().find(deleted => deleted.id === todoList.id)
+                                    if (!deletedElement) userUploadTodos[index].push(todoList);
+                                });
+                            }
+                        }
                     }
                 });
                 updateTaskList(userUploadTodos, false);
@@ -202,15 +248,16 @@ export default function App()
         return deletedDatabaseRef.once('value');
     }
 
-    function addTask()
+    function getUserInput(action)
     {
         const value = inputRef.current?.value;
-
-        if (!value) return;
-
-        updateTaskList([...myTodos, new TaskData(value)]);
         inputRef.current.value = '';
+        if (value) action(value);
     }
+
+    const addTask = () => getUserInput(value => updateTaskList([...myTodos, new TaskData(value)]));
+
+    const addTaskGroup = () => getUserInput(value => updateTaskList([...myTodos, { listName: value, tasks: [] }]));
 
     function updateRemovedList(values)
     {
@@ -231,29 +278,62 @@ export default function App()
 
     function removeTasks()
     {
-        const completedTodos = myTodos.filter(element => element.isCompleted);
+        const completedTodos = filterTodos(myTodos, element => element.taskId ? element.isCompleted : true);
+        const notCompletedTodos = filterTodos(myTodos, element => element.taskId ? !element.isCompleted : true);
 
         updateRemovedList(completedTodos);
-
-        updateTaskList(myTodos.filter(element => !element.isCompleted));
+        updateTaskList(notCompletedTodos);
     }
+
+    const findElement = (id, copyTodos) =>
+    {
+        let result = null;
+        copyTodos.forEach(element =>
+        {
+            if (element.tasks)
+            {
+                const e = element.tasks.find(e => e.taskId === id);
+                if (e) return result = e;
+            }
+            else if (element?.taskId === id) return result = element;
+        });
+        return result;
+    }
+
+    const filterTodos = (copyTodos, condition) =>
+    {
+        const indexesToFilter = [];
+        const filteredCopy = copyTodos.filter(condition);
+
+        filteredCopy.forEach((todo, index) =>
+        {
+            if (todo.tasks) indexesToFilter.push(index);
+        });
+
+        indexesToFilter.forEach(index => filteredCopy[index].tasks = filteredCopy[index].tasks.filter(condition));
+
+        return filteredCopy;
+    };
 
     function removeTask(id)
     {
-        const deletedElement = myTodos.find(element => element.taskId === id);
+        const deletedElement = findElement(id, myTodos);
+        const todosWithoutDeletedOne = filterTodos(myTodos, element => element.taskId ? element.taskId !== id : true);
+
+        if (!deletedElement) return;
 
         updateRemovedList([deletedElement]);
-
-        updateTaskList(myTodos.filter(element => element.taskId !== id));
+        updateTaskList(todosWithoutDeletedOne);
     }
 
     function toggleTodo(id)
     {
         const copyTodos = [...myTodos]
+        const element = findElement(id, copyTodos);
 
-        const element = copyTodos.find(element => element.taskId === id);
-        if (element) element.updateTaskParameter({ isCompleted: !element.isCompleted });
+        if (!element) return;
 
+        element.updateTaskParameter({ isCompleted: !element.isCompleted });
         updateTaskList(copyTodos);
     }
 
@@ -261,7 +341,7 @@ export default function App()
     {
         const copyTodos = [...myTodos]
 
-        const element = copyTodos.find(element => element.taskId === id);
+        const element = findElement(id, copyTodos);
 
         if (!element) return;
 
@@ -271,9 +351,62 @@ export default function App()
         updateTaskList(copyTodos);
     }
 
-    const tasksLeft = myTodos.filter(element => !element.isCompleted).length;
+    const getTaskLeft = () =>
+    {
+        let total = 0;
 
-    function filterDoneTasks() { setShowDoneTasks(!showDoneTasks);}
+        myTodos.forEach(element =>
+        {
+            if (element)
+            {
+                if (element.tasks) total += element.tasks.filter(e => !e.isCompleted).length;
+                else if (element.taskId && !element.isCompleted) total++;
+            }
+        });
+
+        return total;
+    };
+
+    const tasksLeft = getTaskLeft();
+
+    const handleDoneTaskToggle = () => setShowDoneTasks(!showDoneTasks);
+
+    const filterList = list => showDoneTasks ? list : list?.filter(element => !element.isCompleted);
+
+    const DefaultTodolist = () =>
+    {
+        const defaultList = [];
+
+        myTodos.forEach(element =>
+        {
+            if (element && !element.tasks && element.taskId) defaultList.push(element);
+        });
+
+        return <TodoList todos={filterList(defaultList)}
+                         toggleTodo={toggleTodo}
+                         deleteTask={removeTask}
+                         toggleEdition={toggleEdition}
+                         changeGroup={id =>
+                         {
+                             const copyTodos = [...myTodos];
+
+                             const otherList = copyTodos.find(list => list?.listName && list.listName !== DEFAULT_LIST_NAME);
+
+                             if (otherList)
+                             {
+                                 const element = copyTodos.find(element => element.taskId === id);
+                                 if (element)
+                                 {
+                                     const elementPosition = copyTodos.indexOf(element);
+                                     copyTodos.splice(elementPosition, 1);
+                                     otherList.tasks.push(element);
+                                 }
+
+                                 setTodos(copyTodos);
+                             }
+                         }}
+        />
+    };
 
     function AppLayout()
     {
@@ -290,8 +423,7 @@ export default function App()
             {
                 setLoading(true)
 
-                localStorage.removeItem(DEFAULT_KEY);
-                localStorage.removeItem(SHOW_DONE_KEY);
+                localStorage.clear();
 
                 await logout();
 
@@ -324,10 +456,55 @@ export default function App()
                     <Card className={"w-100 bg-success"} style={{ maxWidth: "500px" }}>
                         <Card.Body>
                             <h2>My List ☑️</h2>
-                            <small>v1.8</small>
+                            <small>v1.9</small>
+                            {
+                                myTodos.map((todolist, index) => todolist && (
+                                        todolist.tasks || !todolist.taskId ?
+                                            <TodoList todos={filterList(todolist.tasks)}
+                                                      toggleTodo={toggleTodo}
+                                                      deleteTask={removeTask}
+                                                      toggleEdition={toggleEdition}
 
-                            <TodoList todos={showDoneTasks ? myTodos : myTodos.filter(element => !element.isCompleted)} toggleTodo={toggleTodo} deleteTask={removeTask} toggleEdition={toggleEdition}/>
+                                                      removeGroup={() =>
+                                                      {
+                                                          const copyTodos = [...myTodos];
+                                                          copyTodos[index] = null;
+                                                          setTodos(copyTodos);
+                                                      }}
+                                                      editGroup={newName =>
+                                                      {
+                                                          const copyTodos = [...myTodos];
+                                                          copyTodos[index].listName = newName;
+                                                          setTodos(copyTodos);
+                                                      }}
+                                                      changeGroup={id =>
+                                                      {
+                                                          const copyTodos = [...myTodos];
+                                                          const oldGroup = copyTodos[index];
 
+                                                          const taskGroup = oldGroup.tasks;
+                                                          const oldGroupName = oldGroup.listName;
+
+                                                          const otherList = copyTodos.find(list => list?.listName && list.listName !== oldGroupName);
+
+                                                          if (otherList)
+                                                          {
+                                                              const element = taskGroup.find(element => element.taskId === id);
+                                                              if (element)
+                                                              {
+                                                                  const elementPosition = taskGroup.indexOf(element);
+                                                                  taskGroup.splice(elementPosition, 1);
+                                                                  otherList.tasks.push(element);
+                                                              }
+
+                                                              setTodos(copyTodos);
+                                                          }
+                                                      }}
+                                                      listName={todolist.listName}/> : null
+                                    )
+                                )
+                            }
+                            <DefaultTodolist/>
                             <span>You have {tasksLeft} {tasksLeft === 1 ? 'task' : 'tasks'} left!</span>
                             <InputGroup size={"sm"}>
                                 <FormControl style={{ maxWidth: '400px' }} type={"text"} ref={inputRef} placeholder={"Write your task here..."}/>
@@ -336,14 +513,18 @@ export default function App()
                                     <Button className={"icon-button-md"} variant={"primary"} size={"lg"} onClick={addTask}>+</Button>
                                 </OverlayTrigger>
 
+                                <OverlayTrigger placement={"top"} overlay={getToolTip("Add task group")}>
+                                    <Button className={"icon-button-md"} variant={"secondary"} size={"lg"} onClick={addTaskGroup}>✅+✅</Button>
+                                </OverlayTrigger>
+
                                 <OverlayTrigger placement={"top"} overlay={getToolTip("Remove done tasks")}>
-                                    <Button className={"icon-button-md bg-danger"} variant={"danger"} size={"lg"} onClick={removeTasks} disabled={myTodos.length === 0 || myTodos.length === tasksLeft}>🗑️</Button>
+                                    <Button className={"icon-button-md"} variant={"danger"} size={"lg"} onClick={removeTasks} disabled={myTodos.length === 0 || myTodos.length === tasksLeft}>🗑️</Button>
                                 </OverlayTrigger>
                             </InputGroup>
 
                             <br/>
                             <OverlayTrigger placement={"top"} overlay={getToolTip(showDoneTasks ? 'Hide done tasks' : 'Show done tasks')}>
-                                <Button className={"icon-button-md bg-white"} variant={"light"} onClick={filterDoneTasks}>{showDoneTasks ? <>👁️‍🗨️</> : <>🚫</>}️</Button>
+                                <Button className={"icon-button-md bg-white"} variant={"light"} onClick={handleDoneTaskToggle}>{showDoneTasks ? <>👁️‍🗨️</> : <>🚫</>}️</Button>
                             </OverlayTrigger>
                         </Card.Body>
                     </Card>
