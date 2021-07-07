@@ -468,7 +468,7 @@ export default function App()
                                                       removeGroup={() =>
                                                       {
                                                           const copyTodos = [...myTodos];
-                                                          copyTodos[index] = null;
+                                                          copyTodos.splice(index, 1);
                                                           setTodos(copyTodos);
                                                       }}
                                                       editGroup={newName =>
