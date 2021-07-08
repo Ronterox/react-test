@@ -2,13 +2,14 @@ import React, {useRef, useState} from 'react';
 import {Button, Card, Form, NavLink, Alert, Container} from "react-bootstrap";
 import {useAuth} from "../../contexts/AuthContext";
 import {useHistory} from "react-router-dom";
+import {BackToAppButton} from "./config/Profile";
 
 export default function Login()
 {
     const emailRef = useRef();
     const passwordRef = useRef();
 
-    const { login} = useAuth();
+    const { login } = useAuth();
     const [message, setMessage] = useState({ text: '', variant: 'primary' });
     const [loading, setLoading] = useState(false);
 
@@ -58,7 +59,7 @@ export default function Login()
             </Card>
             <div className={"w-100 text-center mt-2"}>
                 <NavLink href={"/signup"}>Need an account? Sign Up</NavLink>
-                <NavLink href={"/"} className={"btn-secondary text-white rounded m-auto"} style={{width: "120px"}}>Back to App</NavLink>
+                <BackToAppButton/>
             </div>
         </>
     );

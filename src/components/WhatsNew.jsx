@@ -1,5 +1,5 @@
 import React, {Component, useState} from 'react';
-import {Card, Container, NavLink} from "react-bootstrap";
+import {Card, Container} from "react-bootstrap";
 import {databasePatchNotes} from "../firebase";
 import {BackToAppButton} from "./account/config/Profile";
 

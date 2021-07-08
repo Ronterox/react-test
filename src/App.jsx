@@ -216,12 +216,7 @@ export default function App()
             database.child(`/${connectedUser.uid}/${CHILD_DEVICE_TAG}`).once("value").then(deviceIdSnapshot =>
                 {
                     const lastDevice = deviceIdSnapshot.val();
-                    console.log("EVENT! CALLED")
-                    if (lastDevice && lastDevice !== thisDeviceId.current)
-                    {
-                        console.log("EVENT DOWNLOADED!")
-                        setDownloadUserValues(todolistSnapshot);
-                    }
+                    if (lastDevice && lastDevice !== thisDeviceId.current) setDownloadUserValues(todolistSnapshot);
                 }
             );
         });
@@ -283,6 +278,8 @@ export default function App()
             {
                 const deletedList = deletedListSnapshot.val();
                 const newDeletedList = [...deletedList || [], ...values];
+
+                console.log(newDeletedList);
 
                 if (newDeletedList.length > DELETED_TASKS_LENGTH_LIMIT) newDeletedList.splice(0, newDeletedList.length - DELETED_TASKS_LENGTH_LIMIT);
 
@@ -389,6 +386,23 @@ export default function App()
 
     const filterList = list => showDoneTasks ? list : list?.filter(element => !element.isCompleted);
 
+    const moveElementGroup = (taskId, copyTodos, otherList, groupToRemoveFrom) =>
+    {
+        if (!otherList) return;
+
+        const element = groupToRemoveFrom.find(element => element.taskId === taskId);
+
+        if (!element) return;
+
+        const elementPosition = groupToRemoveFrom.indexOf(element);
+        groupToRemoveFrom.splice(elementPosition, 1);
+
+        if (!otherList.tasks) otherList.tasks = [element];
+        else otherList.tasks.push(element);
+
+        updateTaskList(copyTodos);
+    }
+
     const DefaultTodolist = () =>
     {
         const defaultList = [];
@@ -405,21 +419,8 @@ export default function App()
                          changeGroup={id =>
                          {
                              const copyTodos = [...myTodos];
-
-                             const otherList = copyTodos.find(list => list?.listName && list.listName !== DEFAULT_LIST_NAME);
-
-                             if (otherList)
-                             {
-                                 const element = copyTodos.find(element => element.taskId === id);
-                                 if (element)
-                                 {
-                                     const elementPosition = copyTodos.indexOf(element);
-                                     copyTodos.splice(elementPosition, 1);
-                                     otherList.tasks.push(element);
-                                 }
-
-                                 updateTaskList(copyTodos);
-                             }
+                             const otherList = copyTodos.find(list => list.listName && list.listName !== DEFAULT_LIST_NAME);
+                             moveElementGroup(id, copyTodos, otherList, copyTodos);
                          }}
         />
     };
@@ -476,7 +477,8 @@ export default function App()
                             {
                                 myTodos.map((todolist, index) => todolist && (
                                         todolist.tasks || !todolist.taskId ?
-                                            <TodoList todos={filterList(todolist.tasks)}
+                                            <TodoList key={index}
+                                                      todos={filterList(todolist.tasks)}
                                                       toggleTodo={toggleTodo}
                                                       deleteTask={removeTask}
                                                       toggleEdition={toggleEdition}
@@ -500,22 +502,9 @@ export default function App()
                                                           const oldGroup = copyTodos[index];
 
                                                           const taskGroup = oldGroup.tasks;
-                                                          const oldGroupName = oldGroup.listName;
+                                                          const otherList = copyTodos.find(list => list.listName && list.listName !== oldGroup.listName);
 
-                                                          const otherList = copyTodos.find(list => list?.listName && list.listName !== oldGroupName);
-
-                                                          if (otherList)
-                                                          {
-                                                              const element = taskGroup.find(element => element.taskId === id);
-                                                              if (element)
-                                                              {
-                                                                  const elementPosition = taskGroup.indexOf(element);
-                                                                  taskGroup.splice(elementPosition, 1);
-                                                                  otherList.tasks.push(element);
-                                                              }
-
-                                                              updateTaskList(copyTodos);
-                                                          }
+                                                          moveElementGroup(id, copyTodos, otherList, taskGroup);
                                                       }}
                                                       listName={todolist.listName}/> : null
                                     )

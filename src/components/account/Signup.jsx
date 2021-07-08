@@ -2,6 +2,7 @@ import React, {useRef, useState} from 'react';
 import {Button, Card, Form, NavLink, Alert, Container} from "react-bootstrap";
 import {useAuth} from "../../contexts/AuthContext";
 import {Redirect} from "react-router-dom";
+import {BackToAppButton} from "./config/Profile";
 
 
 export default function Signup()
@@ -74,7 +75,7 @@ export default function Signup()
             </Card>
             <div className={"w-100 text-center mt-2"}>
                 <NavLink href={"/login"}>Already have an account? Log In</NavLink>
-                <NavLink href={"/"} className={"btn-secondary text-white rounded m-auto"} style={{ width: "120px" }}>Back to App</NavLink>
+                <BackToAppButton/>
             </div>
         </>
     );
