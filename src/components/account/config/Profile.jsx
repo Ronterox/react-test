@@ -2,6 +2,8 @@ import React from 'react';
 import {Card, Container, Image, NavLink} from "react-bootstrap";
 import {useAuth} from "../../../contexts/AuthContext";
 
+export const BackToAppButton = () => <NavLink href={"/"} className={"btn-secondary text-white rounded d-inline-block m-auto"}>Back to App</NavLink>;
+
 function Profile()
 {
     const { currentUser, userImage } = useAuth();
@@ -23,7 +25,7 @@ function Profile()
                 </Card.Body>
             </Card>
             <div className={"w-100 text-center mt-2"}>
-                <NavLink href={"/"} className={"btn-secondary text-white rounded m-auto"} style={{ width: "120px" }}>Back to App</NavLink>
+                <BackToAppButton/>
             </div>
         </>
     );

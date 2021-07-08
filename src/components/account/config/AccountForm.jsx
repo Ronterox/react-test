@@ -3,6 +3,7 @@ import {Alert, Button, Card, Container, Form, Image, NavLink} from "react-bootst
 import {useAuth} from "../../../contexts/AuthContext";
 import {Redirect} from "react-router-dom";
 import {storage} from "../../../firebase";
+import {BackToAppButton} from "./Profile";
 
 function AccountForm()
 {
@@ -109,7 +110,7 @@ function AccountForm()
                 </Card>
                 <div className={"w-100 text-center mt-2"}>
                     <NavLink href={"/profile"}>Cancel</NavLink>
-                    <NavLink href={"/"} className={"btn-secondary text-white rounded m-auto"} style={{ width: "120px" }}>Back to App</NavLink>
+                    <BackToAppButton/>
                 </div>
             </>
         );

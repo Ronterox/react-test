@@ -40,7 +40,7 @@ export default function TodoList({
     const isDefaultList = listName === DEFAULT_LIST_NAME;
 
     return (
-        <div className={"text-left border border-white bg-dark my-5 text-white"}>
+        <div className={"text-left border border-white bg-dark my-5 text-primary"}>
             <div className={"m-4"}>
                 {
                     !isDefaultList &&

@@ -1,6 +1,7 @@
 import React, {Component, useState} from 'react';
 import {Card, Container, NavLink} from "react-bootstrap";
 import {databasePatchNotes} from "../firebase";
+import {BackToAppButton} from "./account/config/Profile";
 
 class PatchNote extends Component
 {
@@ -87,8 +88,8 @@ export default function WhatsNew()
                     }
                 </Card.Body>
             </Card>
-            <div className={"w-100 text-center mt-2"}>
-                <NavLink href={"/"} className={"btn-secondary text-white rounded m-auto"} style={{ width: "120px" }}>Back to App</NavLink>
+            <div className={"text-center mt-2"}>
+                <BackToAppButton/>
             </div>
         </>
     );

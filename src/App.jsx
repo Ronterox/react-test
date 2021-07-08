@@ -402,7 +402,7 @@ export default function App()
                                      otherList.tasks.push(element);
                                  }
 
-                                 setTodos(copyTodos);
+                                 updateTaskList(copyTodos);
                              }
                          }}
         />
@@ -440,11 +440,11 @@ export default function App()
             <>
                 {
                     (currentUser &&
-                        <div className={"m-3 text-center"} style={{ width: "115px" }}>
+                        <div className={"m-3 text-center"} style={{ width: "120px" }}>
                             <div>
                                 <Image src={userImage} roundedCircle className={"profile-pic"}/>
-                                <h3 className={"text-danger"}>@{currentUser.email.split('@')[0]}</h3>
-                                <NavLink className={"btn btn-primary text-dark"} href={"/profile"}>See Profile</NavLink>
+                                <h3 className={"text-primary"}>@{currentUser.email.split('@')[0]}</h3>
+                                <NavLink className={"btn btn-success text-dark"} href={"/profile"}>See Profile</NavLink>
                             </div>
                             <Button className={"w-100"} onClick={handleLogout} variant={"danger"} disabled={loading}>Log out</Button>
                         </div>
@@ -453,7 +453,7 @@ export default function App()
                 }
                 <NavLink className={"top-right"} href={"/whatsnew"}>What's new?</NavLink>
                 <Container className={"d-flex justify-content-center align-items-center text-center"}>
-                    <Card className={"w-100 bg-success"} style={{ maxWidth: "500px" }}>
+                    <Card className={"w-100"} style={{ maxWidth: "500px" }}>
                         <Card.Body>
                             <h2>My List ☑️</h2>
                             <small>v1.9</small>
@@ -469,13 +469,13 @@ export default function App()
                                                       {
                                                           const copyTodos = [...myTodos];
                                                           copyTodos.splice(index, 1);
-                                                          setTodos(copyTodos);
+                                                          updateTaskList(copyTodos);
                                                       }}
                                                       editGroup={newName =>
                                                       {
                                                           const copyTodos = [...myTodos];
                                                           copyTodos[index].listName = newName;
-                                                          setTodos(copyTodos);
+                                                          updateTaskList(copyTodos);
                                                       }}
                                                       changeGroup={id =>
                                                       {
@@ -497,7 +497,7 @@ export default function App()
                                                                   otherList.tasks.push(element);
                                                               }
 
-                                                              setTodos(copyTodos);
+                                                              updateTaskList(copyTodos);
                                                           }
                                                       }}
                                                       listName={todolist.listName}/> : null
@@ -507,14 +507,14 @@ export default function App()
                             <DefaultTodolist/>
                             <span>You have {tasksLeft} {tasksLeft === 1 ? 'task' : 'tasks'} left!</span>
                             <InputGroup size={"sm"}>
-                                <FormControl style={{ maxWidth: '400px' }} type={"text"} ref={inputRef} placeholder={"Write your task here..."}/>
+                                <FormControl className={"bg-dark text-primary"} style={{ maxWidth: '400px' }} type={"text"} ref={inputRef} placeholder={"Write your task here..."}/>
 
                                 <OverlayTrigger placement={"top"} overlay={getToolTip("Add a task")}>
                                     <Button className={"icon-button-md"} variant={"primary"} size={"lg"} onClick={addTask}>+</Button>
                                 </OverlayTrigger>
 
                                 <OverlayTrigger placement={"top"} overlay={getToolTip("Add task group")}>
-                                    <Button className={"icon-button-md"} variant={"secondary"} size={"lg"} onClick={addTaskGroup}>✅+✅</Button>
+                                    <Button className={"icon-button-md"} variant={"dark"} size={"lg"} onClick={addTaskGroup}>✅+✅</Button>
                                 </OverlayTrigger>
 
                                 <OverlayTrigger placement={"top"} overlay={getToolTip("Remove done tasks")}>
@@ -524,7 +524,7 @@ export default function App()
 
                             <br/>
                             <OverlayTrigger placement={"top"} overlay={getToolTip(showDoneTasks ? 'Hide done tasks' : 'Show done tasks')}>
-                                <Button className={"icon-button-md bg-white"} variant={"light"} onClick={handleDoneTaskToggle}>{showDoneTasks ? <>👁️‍🗨️</> : <>🚫</>}️</Button>
+                                <Button variant={"dark"} onClick={handleDoneTaskToggle}>{showDoneTasks ? <span className={"text-danger"}>Hide</span> : <span className={"text-primary"}>Show</span>}️</Button>
                             </OverlayTrigger>
                         </Card.Body>
                     </Card>
