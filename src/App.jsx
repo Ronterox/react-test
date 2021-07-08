@@ -147,56 +147,65 @@ export default function App()
             {
                 if (element)
                 {
-                    if (element.tasks)
+                    if (element.listName)
                     {
-                        const todoList = [];
-
-                        element.tasks.forEach(task => todoList.push(TaskData.createTask(task)));
-
-                        userUploadTodos.push(todoList);
+                        if (element.tasks)
+                        {
+                            const todoList = [];
+                            element.tasks.forEach(task => todoList.push(TaskData.createTask(task)));
+                            userUploadTodos.push({ listName: element.listName, tasks: todoList });
+                        }
+                        else userUploadTodos.push(element);
                     }
                     else if (element.taskId) userUploadTodos.push(TaskData.createTask(element));
                 }
             });
 
-            if (userUploadTodos && myTodos !== userUploadTodos)
+            const checkForNewOrUpdatedElement = (otherElement, array) =>
             {
-                myTodos.forEach((todoList, index) =>
-                {
-                    if (userUploadTodos[index])
-                    {
-                        if (userUploadTodos[index].tasks)
-                        {
-                            todoList.forEach(task =>
-                            {
-                                const element = userUploadTodos[index].tasks.find(element => element.taskId === task.taskId);
+                const element = array.find(e => e.taskId === otherElement.taskId);
 
-                                if (element && element.lastModfication < task.lastModfication) element.setTaskValues(task);
-                                else if (!element)
-                                {
-                                    obtainDeletedList().then(deletedListSnapshot =>
-                                    {
-                                        const deletedElement = deletedListSnapshot.val().find(deleted => deleted.id === task.id)
-                                        if (!deletedElement) userUploadTodos[index].push(task);
-                                    });
-                                }
+                if (element && element.lastModfication < otherElement.lastModfication) element.setTaskValues(otherElement);
+                else if (!element)
+                {
+                    obtainDeletedList().then(deletedListSnapshot =>
+                    {
+                        const deletedElement = deletedListSnapshot.val().find(deleted => deleted.taskId === otherElement.taskId)
+                        if (!deletedElement) array.push(otherElement);
+                    });
+                }
+            }
+
+            if (userUploadTodos.length > 0)
+            {
+                myTodos.forEach((todoElement) =>
+                {
+                    const isList = todoElement.listName;
+
+                    if (isList)
+                    {
+                        const list = userUploadTodos.find(l => l.listName === todoElement.listName);
+
+                        if (list)
+                        {
+                            const index = userUploadTodos.indexOf(list);
+
+                            list.tasks?.forEach(task => checkForNewOrUpdatedElement(task, todoElement));
+
+                            userUploadTodos[index] = todoElement;
+                        }
+                        else
+                        {
+                            obtainDeletedList().then(deleteListSnapshot =>
+                            {
+                                const deletedList = deleteListSnapshot.val();
+                                const deletedGroup = deletedList.find(deleted => deleted.listName === list.listName);
+
+                                if (!deletedGroup) userUploadTodos.push(todoElement);
                             });
                         }
-                        else if (userUploadTodos[index].taskId)
-                        {
-                            const element = userUploadTodos[index];
-
-                            if (element.lastModfication < todoList.lastModfication) element.setTaskValues(todoList);
-                            else if (!element)
-                            {
-                                obtainDeletedList().then(deletedListSnapshot =>
-                                {
-                                    const deletedElement = deletedListSnapshot.val().find(deleted => deleted.id === todoList.id)
-                                    if (!deletedElement) userUploadTodos[index].push(todoList);
-                                });
-                            }
-                        }
                     }
+                    else checkForNewOrUpdatedElement(todoElement, userUploadTodos);
                 });
                 updateTaskList(userUploadTodos, false);
             }
@@ -207,7 +216,12 @@ export default function App()
             database.child(`/${connectedUser.uid}/${CHILD_DEVICE_TAG}`).once("value").then(deviceIdSnapshot =>
                 {
                     const lastDevice = deviceIdSnapshot.val();
-                    if (lastDevice && lastDevice !== thisDeviceId.current) setDownloadUserValues(todolistSnapshot);
+                    console.log("EVENT! CALLED")
+                    if (lastDevice && lastDevice !== thisDeviceId.current)
+                    {
+                        console.log("EVENT DOWNLOADED!")
+                        setDownloadUserValues(todolistSnapshot);
+                    }
                 }
             );
         });
@@ -224,9 +238,11 @@ export default function App()
 
         const uploadConnectedUserValues = () =>
         {
+            if (!isUserRefresh.current) return;
+
             const userUrl = database.child(connectedUser.uid);
             userUrl.child(CHILD_TODOLIST_TAG).set(myTodos).then(() => console.log("Uploaded values to database: " + JSON.stringify(myTodos)));
-            if (isUserRefresh.current) userUrl.child(CHILD_DEVICE_TAG).set(thisDeviceId.current).then(() => console.log("Set device: " + thisDeviceId.current));
+            userUrl.child(CHILD_DEVICE_TAG).set(thisDeviceId.current).then(() => console.log("Set device: " + thisDeviceId.current));
         }
 
         uploadConnectedUserValues();
@@ -468,8 +484,9 @@ export default function App()
                                                       removeGroup={() =>
                                                       {
                                                           const copyTodos = [...myTodos];
-                                                          copyTodos.splice(index, 1);
+                                                          const deletedGroup = copyTodos.splice(index, 1);
                                                           updateTaskList(copyTodos);
+                                                          updateRemovedList(deletedGroup);
                                                       }}
                                                       editGroup={newName =>
                                                       {
