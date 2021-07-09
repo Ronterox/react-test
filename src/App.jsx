@@ -190,7 +190,7 @@ export default function App()
                         {
                             const index = userUploadTodos.indexOf(list);
 
-                            list.tasks?.forEach(task => checkForNewOrUpdatedElement(task, todoElement));
+                            list.tasks?.forEach(task => checkForNewOrUpdatedElement(task, todoElement.tasks));
 
                             userUploadTodos[index] = todoElement;
                         }
@@ -386,9 +386,9 @@ export default function App()
 
     const filterList = list => showDoneTasks ? list : list?.filter(element => !element.isCompleted);
 
-    const moveElementGroup = (taskId, copyTodos, otherList, groupToRemoveFrom) =>
+    const moveElementToOtherGroup = (taskId, copyTodos, otherGroup, groupToRemoveFrom) =>
     {
-        if (!otherList) return;
+        if (!otherGroup) return;
 
         const element = groupToRemoveFrom.find(element => element.taskId === taskId);
 
@@ -397,8 +397,8 @@ export default function App()
         const elementPosition = groupToRemoveFrom.indexOf(element);
         groupToRemoveFrom.splice(elementPosition, 1);
 
-        if (!otherList.tasks) otherList.tasks = [element];
-        else otherList.tasks.push(element);
+        if (!otherGroup.tasks) otherGroup.tasks = [element];
+        else otherGroup.tasks.push(element);
 
         updateTaskList(copyTodos);
     }
@@ -419,8 +419,9 @@ export default function App()
                          changeGroup={id =>
                          {
                              const copyTodos = [...myTodos];
-                             const otherList = copyTodos.find(list => list.listName && list.listName !== DEFAULT_LIST_NAME);
-                             moveElementGroup(id, copyTodos, otherList, copyTodos);
+                             const otherList = [...copyTodos].reverse().find(list => list.listName && list.listName !== DEFAULT_LIST_NAME);
+
+                             moveElementToOtherGroup(id, copyTodos, otherList, copyTodos);
                          }}
         />
     };
@@ -473,7 +474,7 @@ export default function App()
                     <Card className={"w-100"} style={{ maxWidth: "500px" }}>
                         <Card.Body>
                             <h2>My List ☑️</h2>
-                            <small>v1.9</small>
+                            <small>v2.0</small>
                             {
                                 myTodos.map((todolist, index) => todolist && (
                                         todolist.tasks || !todolist.taskId ?
@@ -499,12 +500,22 @@ export default function App()
                                                       changeGroup={id =>
                                                       {
                                                           const copyTodos = [...myTodos];
+                                                          const reversedTodos = [...copyTodos].reverse();
+                                                          
+                                                          let otherList = null;
+
+                                                          const reversedIndex = reversedTodos.indexOf(copyTodos[index]);
+                                                          let i = reversedIndex;
+
+                                                          while ((i = (i + 1) % reversedTodos.length) !== reversedIndex && !otherList)
+                                                          {
+                                                              if (reversedTodos[i].listName) otherList = reversedTodos[i];
+                                                          }
+
                                                           const oldGroup = copyTodos[index];
-
                                                           const taskGroup = oldGroup.tasks;
-                                                          const otherList = copyTodos.find(list => list.listName && list.listName !== oldGroup.listName);
 
-                                                          moveElementGroup(id, copyTodos, otherList, taskGroup);
+                                                          moveElementToOtherGroup(id, copyTodos, otherList, taskGroup);
                                                       }}
                                                       listName={todolist.listName}/> : null
                                     )
