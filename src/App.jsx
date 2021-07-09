@@ -501,7 +501,7 @@ export default function App()
                                                       {
                                                           const copyTodos = [...myTodos];
                                                           const reversedTodos = [...copyTodos].reverse();
-                                                          
+
                                                           let otherList = null;
 
                                                           const reversedIndex = reversedTodos.indexOf(copyTodos[index]);

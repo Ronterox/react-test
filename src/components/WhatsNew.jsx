@@ -1,4 +1,4 @@
-import React, {Component, useState} from 'react';
+import React, {Component, useEffect, useState} from 'react';
 import {Card, Container} from "react-bootstrap";
 import {databasePatchNotes} from "../firebase";
 import {BackToAppButton} from "./account/config/Profile";
@@ -41,15 +41,7 @@ export default function WhatsNew()
 {
     const [versions, setVersions] = useState([]);
 
-    const downloadVersions = () =>
-    {
-        databasePatchNotes.once("value").then(downloadedVersions => setVersions(Object.values(downloadedVersions.val())));
-        versions.reverse();
-    };
 
-    downloadVersions();
-
-    /*
     const uploadPatchNote = patchNote =>
     {
         const { version, updates, bugs } = patchNote;
@@ -69,10 +61,19 @@ export default function WhatsNew()
 
     useEffect(() =>
     {
-        uploadPatchNote(new PatchNote({ version: "1,9 - Current Version", updates: ["Added tasks grouping", "Online Patch Notes"], bugs: ["Fixed user image upload not showing user image"] }))
-    }, [])
+        const downloadVersions = () =>
+        {
+            databasePatchNotes.once("value").then(downloadedVersions =>
+            {
+                const updates = Object.values(downloadedVersions.val()).reverse();
+                setVersions(updates);
+            });
+        };
 
-     */
+        downloadVersions();
+
+        //uploadPatchNote(new PatchNote({ version: "2,0 - Current Version", updates: ["Redesign App Palette", "Removed limit of group tasks"], bugs: ["Fixed missing groups data after app reset", "Fixed what's new page recursion"] }))
+    }, [])
 
 
     const WhatsNewLayout = () => (
