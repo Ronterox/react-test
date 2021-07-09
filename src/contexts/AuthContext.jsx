@@ -24,11 +24,10 @@ export function AuthProvider({ children })
         {
             setCurrentUser(user);
 
-            setLoading(false);
-
             const profileImageRef = storage.child(user.uid);
-
             profileImageRef.getDownloadURL().then(downloadURl => setUserImage(downloadURl)).catch(() => setUserImage(images.defaultProfile));
+
+            setLoading(false);
         });
     }, []);
 

@@ -41,24 +41,6 @@ export default function WhatsNew()
 {
     const [versions, setVersions] = useState([]);
 
-
-    const uploadPatchNote = patchNote =>
-    {
-        const { version, updates, bugs } = patchNote;
-
-        databasePatchNotes.once("value").then(downloadedVersions =>
-        {
-            const values = Object.values(downloadedVersions.val());
-            values.forEach((patchNote, index) =>
-            {
-                const splittedVersion = patchNote.version.split(' ');
-                if (splittedVersion.length > 1) values[index].version = splittedVersion[0];
-            });
-
-            databasePatchNotes.set(values).then(() => databasePatchNotes.child(patchNote.version).set({ version, updates, bugs }));
-        });
-    }
-
     useEffect(() =>
     {
         const downloadVersions = () =>
@@ -71,8 +53,26 @@ export default function WhatsNew()
         };
 
         downloadVersions();
+        /*
+        const uploadPatchNote = patchNote =>
+        {
+            const { version, updates, bugs } = patchNote;
 
-        //uploadPatchNote(new PatchNote({ version: "2,0 - Current Version", updates: ["Redesign App Palette", "Removed limit of group tasks"], bugs: ["Fixed missing groups data after app reset", "Fixed what's new page recursion"] }))
+            databasePatchNotes.once("value").then(downloadedVersions =>
+            {
+                const values = Object.values(downloadedVersions.val());
+                values.forEach((patchNote, index) =>
+                {
+                    const splittedVersion = patchNote.version.split(' ');
+                    if (splittedVersion.length > 1) values[index].version = splittedVersion[0];
+                });
+
+                databasePatchNotes.set(values).then(() => databasePatchNotes.child(patchNote.version).set({ version, updates, bugs }));
+            });
+        }
+
+        uploadPatchNote(new PatchNote({ version: "2,0 - Current Version", updates: ["Redesign App Palette", "Removed limit of group tasks"], bugs: ["Fixed missing groups data after app reset", "Fixed what's new page recursion"] }))
+         */
     }, [])
 
 

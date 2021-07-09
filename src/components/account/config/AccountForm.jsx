@@ -1,9 +1,10 @@
 import React, {useRef, useState} from 'react';
 import {Alert, Button, Card, Container, Form, Image, NavLink} from "react-bootstrap";
 import {useAuth} from "../../../contexts/AuthContext";
-import {Redirect} from "react-router-dom";
 import {storage} from "../../../firebase";
 import {BackToAppButton} from "./Profile";
+import {resizeImage} from "../../utils/Compressor";
+import {useHistory} from "react-router-dom";
 
 function AccountForm()
 {
@@ -11,14 +12,14 @@ function AccountForm()
     const passwordRef = useRef();
     const repeatPasswordRef = useRef();
 
-    const [selectedFile, setSelectedFile] = useState(null);
+    const [selectedFile, setSelectedFile] = useState();
     const [progress, setProgress] = useState(0);
 
     const { currentUser, userImage } = useAuth();
     const [message, setMessage] = useState({ text: '', variant: 'primary' });
     const [loading, setLoading] = useState(false);
 
-    const [redirect, setRedirect] = useState(false);
+    const history = useHistory();
 
     async function handleSubmitUpdate(event)
     {
@@ -40,7 +41,7 @@ function AccountForm()
         if (selectedFile)
         {
             const storageRef = storage.child(currentUser.uid);
-            const task = storageRef.put(selectedFile);
+            const task = storageRef.put(await resizeImage(selectedFile));
 
             promises.push(task);
 
@@ -48,14 +49,17 @@ function AccountForm()
             {
                 const percentage = uploadData.bytesTransferred / uploadData.totalBytes * 100;
                 setProgress(percentage);
-
-            }, error => setMessage(createMessage(error, "danger")));
+            });
         }
 
         Promise.all(promises).then(() =>
         {
             setMessage(createMessage("Account successfully updated!", 'success'))
-            setRedirect(true);
+
+            //Go to profile and reload the page
+            history.push("/profile");
+            window.location.reload(false);
+
         }).catch(e => setMessage(createMessage(e + '', 'danger')));
 
         setLoading(false);
@@ -72,6 +76,7 @@ function AccountForm()
     const AccountFormLayout = () =>
     {
         const INPUT_PLACEHOLDER = "Leave blank to keep the same!";
+        const imgSource = selectedFile ? URL.createObjectURL(selectedFile) : userImage;
         return (
             <>
                 <Card className={"p-2"}>
@@ -80,13 +85,13 @@ function AccountForm()
                         {message.text && <Alert variant={message.variant}>{message.text}</Alert>}
                         <Form onSubmit={handleSubmitUpdate}>
                             <Form.Group controlId={"picture"}>
-                                <div className={"d-flex m-auto"}>
-                                    <div>
+                                <div className={"d-flex justify-content-around m-auto"}>
+                                    <div className={"w-50"}>
                                         <Form.Label>New Profile Picture</Form.Label>
                                         <Form.File accept={"image/*"} onChange={handleFileChange}/>
                                         <progress value={progress} max={100}/>
                                     </div>
-                                    <Image src={selectedFile ? URL.createObjectURL(selectedFile) : userImage} style={{ width: "100px", height: "100px" }}/>
+                                    <Image src={imgSource} style={{ width: "100px", height: "100px" }}/>
                                 </div>
                             </Form.Group>
                             <hr/>
@@ -104,7 +109,6 @@ function AccountForm()
                                 <Form.Control ref={repeatPasswordRef} type={"password"} placeholder={INPUT_PLACEHOLDER}/>
                             </Form.Group>
                             <Button className={"mt-4 w-100"} type={"Submit"} disabled={loading}>Update</Button>
-                            {redirect && <Redirect to={"/profile"}/>}
                         </Form>
                     </Card.Body>
                 </Card>
