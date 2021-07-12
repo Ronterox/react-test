@@ -1,17 +1,17 @@
 import './css/App.css'
-import {Button, Card, Container, FormControl, Image, InputGroup, NavLink, OverlayTrigger, Tooltip} from "react-bootstrap";
-import {BrowserRouter, Switch, Route, useHistory} from "react-router-dom";
-import {useEffect, useRef, useState} from 'react';
-import {AuthProvider, useAuth} from "./contexts/AuthContext";
-import TodoList, {DEFAULT_LIST_NAME} from "./components/objects/Todolist";
+import { Button, Card, Container, FormControl, Image, InputGroup, NavLink, OverlayTrigger, Tooltip } from "react-bootstrap";
+import { BrowserRouter, Switch, Route, useHistory } from "react-router-dom";
+import { useEffect, useRef, useState } from 'react';
+import { AuthProvider, useAuth, User } from "./contexts/AuthContext";
+import TodoList, { DEFAULT_LIST_NAME } from "./components/objects/Todolist";
 import Signup from "./components/account/Signup";
 import Login from "./components/account/Login";
-import {database} from "./firebase";
-import {v4} from 'uuid';
+import { database } from "./firebase";
+import { v4 } from 'uuid';
 import WhatsNew from "./components/WhatsNew";
 import AccountForm from "./components/account/config/AccountForm";
 import Profile from "./components/account/config/Profile";
-import {PrivateRoute, PublicRoute} from "./components/utils/MyRoutes";
+import { PrivateRoute, PublicRoute } from "./components/utils/MyRoutes";
 import DeleteAccount from "./components/account/config/DeleteAccount";
 
 const UNNECESSARY_TEXT = "default.todolist.";
@@ -30,18 +30,41 @@ export const getToolTip = text => <Tooltip id="tooltip-show-button">{text}️</T
 
 const getTime = () => Date.now();
 
+type TaskArray = (TaskData | TaskList)[];
+
+interface TaskList
+{
+    listName: string,
+    tasks: TaskData[]
+}
+
+interface TaskInfo
+{
+    taskId: string,
+    taskText: string,
+    isCompleted: boolean,
+    isEditing: boolean,
+    lastModification: number
+}
+
 class TaskData
 {
-    constructor(taskText)
+    taskId: string;
+    taskText: string;
+    isCompleted: boolean;
+    isEditing: boolean;
+    lastModification: number;
+
+    constructor(taskText = "")
     {
         this.taskId = v4();
         this.taskText = taskText;
         this.isCompleted = false;
         this.isEditing = false;
-        this.lastModfication = getTime();
+        this.lastModification = getTime();
     }
 
-    setTask(task)
+    setTask(task: TaskInfo)
     {
         this.taskId = task.taskId;
         this.setTaskValues(task);
@@ -52,7 +75,7 @@ class TaskData
         this.taskText = task.taskText;
         this.isCompleted = task.isCompleted;
         this.isEditing = task.isEditing;
-        this.lastModfication = task.lastModfication;
+        this.lastModification = task.lastModification;
     }
 
     updateTaskParameter(props)
@@ -62,7 +85,7 @@ class TaskData
         else if (props.isEditing !== undefined) this.isEditing = props.isEditing;
         else return;
 
-        this.lastModfication = getTime();
+        this.lastModification = getTime();
     }
 
     updateTask(props)
@@ -71,10 +94,10 @@ class TaskData
         if (props.isCompleted !== undefined) this.isCompleted = props.isCompleted;
         if (props.isEditing !== undefined) this.isEditing = props.isEditing;
 
-        this.lastModfication = getTime();
+        this.lastModification = getTime();
     }
 
-    static createTask(task)
+    static createTask(task: TaskInfo)
     {
         const taskData = new TaskData();
         taskData.setTask(task);
@@ -85,14 +108,14 @@ class TaskData
 
 export default function App()
 {
-    const [myTodos, setTodos] = useState([]);
+    const [myTodos, setTodos] = useState<TaskArray>([]);
     const [showDoneTasks, setShowDoneTasks] = useState(true);
-    const inputRef = useRef();
+    const inputRef = useRef<HTMLInputElement>();
 
-    const [connectedUser, setConnectedUser] = useState();
+    const [connectedUser, setConnectedUser] = useState<User>();
 
-    const lastUserId = useRef();
-    const thisDeviceId = useRef();
+    const lastUserId = useRef<string>();
+    const thisDeviceId = useRef<string>();
 
     const isUserRefresh = useRef(false);
 
@@ -102,28 +125,32 @@ export default function App()
     useEffect(() =>
     {
         const savedData = localStorage.getItem(DEFAULT_KEY);
-        const wasShowingDone = localStorage.getItem(SHOW_DONE_KEY);
+        const wasShowingDone = localStorage.getItem(SHOW_DONE_KEY) || "";
 
         let localDevice = localStorage.getItem(DEVICE_KEY);
-        if (localDevice === 'undefined') localDevice = false;
+        if (localDevice === 'undefined') localDevice = null;
 
         thisDeviceId.current = localDevice || v4();
 
         if (savedData)
         {
-            const todos = [];
+            let todos: TaskArray = [];
+            const parsedData: TaskArray = JSON.parse(savedData);
+            /*
+                        parsedData.forEach(todo =>
+                        {
+                            if (todo.tasks)
+                            {
+                                const todolist: TaskData[] = [];
+                                todo.tasks.forEach(task => todolist.push(TaskData.createTask(task)));
+                                todos.push({ listName: todo.listName, tasks: todolist } as TaskList);
+                            }
+                            else if (todo.taskId) todos.push(TaskData.createTask(todo));
+                            else todos.push({ listName: todo.listName, tasks: [] } as TaskList);
+                        });*/
 
-            JSON.parse(savedData).forEach(todo =>
-            {
-                if (todo.tasks)
-                {
-                    const todolist = [];
-                    todo.tasks.forEach(task => todolist.push(TaskData.createTask(task)));
-                    todos.push({ listName: todo.listName, tasks: todolist });
-                }
-                else if (todo.taskId) todos.push(TaskData.createTask(todo));
-                else todos.push(todo);
-            });
+            todos = parsedData;
+
 
             updateTaskList(todos, false);
         }
@@ -140,24 +167,24 @@ export default function App()
 
         const setDownloadUserValues = snapshot =>
         {
-            const userUploadTodos = [];
+            const userUploadTodos: TaskArray = [];
 
             const allLists = snapshot.val();
-            allLists?.forEach(element =>
+            allLists?.forEach((element: TaskList | TaskInfo) =>
             {
                 if (element)
                 {
-                    if (element.listName)
+                    if ("listName" in element)
                     {
                         if (element.tasks)
                         {
-                            const todoList = [];
+                            const todoList: TaskData[] = [];
                             element.tasks.forEach(task => todoList.push(TaskData.createTask(task)));
-                            userUploadTodos.push({ listName: element.listName, tasks: todoList });
+                            userUploadTodos.push({ listName: element.listName, tasks: todoList } as TaskList);
                         }
                         else userUploadTodos.push(element);
                     }
-                    else if (element.taskId) userUploadTodos.push(TaskData.createTask(element));
+                    else if ("taskId" in element) userUploadTodos.push(TaskData.createTask(element));
                 }
             });
 
@@ -165,7 +192,7 @@ export default function App()
             {
                 const element = array.find(e => e.taskId === otherElement.taskId);
 
-                if (element && element.lastModfication < otherElement.lastModfication) element.setTaskValues(otherElement);
+                if (element && element.lastModification < otherElement.lastModification) element.setTaskValues(otherElement);
                 else if (!element)
                 {
                     obtainDeletedList().then(deletedListSnapshot =>
@@ -178,19 +205,17 @@ export default function App()
 
             if (userUploadTodos.length > 0)
             {
-                myTodos.forEach((todoElement) =>
+                myTodos.forEach(todoElement =>
                 {
-                    const isList = todoElement.listName;
-
-                    if (isList)
+                    if ("listName" in todoElement)
                     {
-                        const list = userUploadTodos.find(l => l.listName === todoElement.listName);
+                        const list = userUploadTodos.find(l => (l as TaskList).listName === todoElement.listName);
 
                         if (list)
                         {
                             const index = userUploadTodos.indexOf(list);
 
-                            list.tasks?.forEach(task => checkForNewOrUpdatedElement(task, todoElement.tasks));
+                            (list as TaskList).tasks?.forEach(task => checkForNewOrUpdatedElement(task, todoElement.tasks));
 
                             userUploadTodos[index] = todoElement;
                         }
@@ -199,7 +224,7 @@ export default function App()
                             obtainDeletedList().then(deleteListSnapshot =>
                             {
                                 const deletedList = deleteListSnapshot.val();
-                                const deletedGroup = deletedList.find(deleted => deleted.listName === list.listName);
+                                const deletedGroup = deletedList.find(deleted => deleted.listName === todoElement.listName);
 
                                 if (!deletedGroup) userUploadTodos.push(todoElement);
                             });
@@ -227,7 +252,7 @@ export default function App()
     useEffect(() =>
     {
         localStorage.setItem(DEFAULT_KEY, JSON.stringify(myTodos));
-        localStorage.setItem(DEVICE_KEY, thisDeviceId.current);
+        localStorage.setItem(DEVICE_KEY, thisDeviceId.current || "");
 
         if (!connectedUser) return;
 
@@ -255,14 +280,17 @@ export default function App()
 
     function obtainDeletedList()
     {
-        const deletedDatabaseRef = database.child(`/${connectedUser.uid}/${CHILD_DELETED_TAG}`);
+        const deletedDatabaseRef = database.child(`/${connectedUser?.uid}/${CHILD_DELETED_TAG}`);
         return deletedDatabaseRef.once('value');
     }
 
     function getUserInput(action)
     {
-        const value = inputRef.current?.value;
+        if (!inputRef.current) return;
+
+        const value = inputRef.current.value;
         inputRef.current.value = '';
+
         if (value) action(value);
     }
 
@@ -298,32 +326,35 @@ export default function App()
         updateTaskList(notCompletedTodos);
     }
 
-    const findElement = (id, copyTodos) =>
+    const findElement = (id: string, copyTodos: TaskArray) =>
     {
-        let result = null;
         copyTodos.forEach(element =>
         {
-            if (element.tasks)
+            if ("tasks" in element)
             {
                 const e = element.tasks.find(e => e.taskId === id);
-                if (e) return result = e;
+                if (e) return e;
             }
-            else if (element?.taskId === id) return result = element;
+            else if (element?.taskId === id) return element;
         });
-        return result;
+        return null;
     }
 
-    const filterTodos = (copyTodos, condition) =>
+    const filterTodos = (copyTodos: TaskArray, condition: (e) => boolean) =>
     {
-        const indexesToFilter = [];
+        const indexesToFilter: number[] = [];
         const filteredCopy = copyTodos.filter(condition);
 
         filteredCopy.forEach((todo, index) =>
         {
-            if (todo.tasks) indexesToFilter.push(index);
+            if ("tasks" in todo) indexesToFilter.push(index);
         });
 
-        indexesToFilter.forEach(index => filteredCopy[index].tasks = filteredCopy[index].tasks.filter(condition));
+        indexesToFilter.forEach(index =>
+        {
+            const taskList = filteredCopy[index] as TaskList;
+            taskList.tasks = taskList.tasks.filter(condition)
+        });
 
         return filteredCopy;
     };
@@ -342,9 +373,11 @@ export default function App()
     function toggleTodo(id)
     {
         const copyTodos = [...myTodos]
-        const element = findElement(id, copyTodos);
+        const foundElement = findElement(id, copyTodos);
 
-        if (!element) return;
+        if (!foundElement) return;
+
+        const element: TaskData = foundElement as TaskData;
 
         element.updateTaskParameter({ isCompleted: !element.isCompleted });
         updateTaskList(copyTodos);
@@ -353,10 +386,11 @@ export default function App()
     function toggleEdition(id, newValue)
     {
         const copyTodos = [...myTodos]
+        const foundElement = findElement(id, copyTodos);
 
-        const element = findElement(id, copyTodos);
+        if (!foundElement) return;
 
-        if (!element) return;
+        const element: TaskData = foundElement as TaskData;
 
         if (element.isEditing && newValue && newValue !== element.taskText) element.updateTask({ isEditing: !element.isEditing, taskText: newValue });
         else element.updateTaskParameter({ isEditing: !element.isEditing });
@@ -370,11 +404,8 @@ export default function App()
 
         myTodos.forEach(element =>
         {
-            if (element)
-            {
-                if (element.tasks) total += element.tasks.filter(e => !e.isCompleted).length;
-                else if (element.taskId && !element.isCompleted) total++;
-            }
+            if ("tasks" in element) total += element.tasks.filter(e => !e.isCompleted).length;
+            else if ("taskId" in element && !element.isCompleted) total++;
         });
 
         return total;
@@ -405,11 +436,11 @@ export default function App()
 
     const DefaultTodolist = () =>
     {
-        const defaultList = [];
+        const defaultList: TaskData[] = [];
 
         myTodos.forEach(element =>
         {
-            if (element && !element.tasks && element.taskId) defaultList.push(element);
+            if (element && "taskId" in element) defaultList.push(element);
         });
 
         return <TodoList todos={filterList(defaultList)}
@@ -419,12 +450,16 @@ export default function App()
                          changeGroup={id =>
                          {
                              const copyTodos = [...myTodos];
-                             const otherList = [...copyTodos].reverse().find(list => list.listName && list.listName !== DEFAULT_LIST_NAME);
+                             const otherList = [...copyTodos].reverse().find(element =>
+                             {
+                                 const list = element as TaskList;
+                                 return list.listName && list.listName !== DEFAULT_LIST_NAME
+                             });
 
                              moveElementToOtherGroup(id, copyTodos, otherList, copyTodos);
                          }}
         />
-    };
+    }
 
     function AppLayout()
     {
@@ -443,7 +478,7 @@ export default function App()
 
                 localStorage.clear();
 
-                await logout();
+                if (logout) await logout();
 
                 history.push('/login');
             }
