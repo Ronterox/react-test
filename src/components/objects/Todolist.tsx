@@ -20,7 +20,7 @@ export default function TodoList({
 {
     const [seeTasks, setSeeTasks] = useState(true);
     const [isEditing, setIsEditing] = useState(false);
-    const inputRef = useRef();
+    const inputRef = useRef<HTMLInputElement>(null);
 
     const handleDropdownToggle = () => setSeeTasks(prevState => !prevState);
     const handleEditToggle = () =>
@@ -58,7 +58,7 @@ export default function TodoList({
                     </OverlayTrigger>
                 }
             </div>
-            <ul className={"list-unstyled"} style={{ minHeight: "150px" }}>
+            <ul className={"list-unstyled"} style={{minHeight: "150px"}}>
                 {
                     seeTasks &&
                     todos.map((item, index) => <Task key={index}

@@ -1,6 +1,6 @@
 import React from 'react';
-import {Card, Container, Image, NavLink} from "react-bootstrap";
-import {useAuth} from "../../../contexts/AuthContext";
+import { Card, Container, Image, NavLink } from "react-bootstrap";
+import { useAuth } from "../../../contexts/AuthContext";
 
 export const BackToAppButton = () => <NavLink href={"/"} className={"btn-secondary text-white rounded d-inline-block m-auto"}>Back to App</NavLink>;
 
@@ -16,7 +16,7 @@ function Profile()
                     <Image className={"d-block m-auto profile-pic"} src={userImage} style={{ height: "125px", width: "125px" }} roundedCircle/>
                     <hr/>
                     <strong>Email: </strong>
-                    <span>{currentUser.email}</span>
+                    <span>{currentUser?.email}</span>
                     <br/>
                     <strong>Password: </strong>
                     <span>********</span>

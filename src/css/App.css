@@ -1,6 +1,12 @@
+@font-face
+{
+    font-family: 'Otomanopee One';
+    src: url("../fonts/otomanopeeone-regular.ttf");
+}
+
 body
 {
-    font-family: Cursive, serif !important;
+    font-family: 'Otomanopee One', sans-serif !important;
 }
 
 .text-left

@@ -8,15 +8,15 @@ import {useHistory} from "react-router-dom";
 
 function AccountForm()
 {
-    const emailRef = useRef();
-    const passwordRef = useRef();
-    const repeatPasswordRef = useRef();
+    const emailRef = useRef<any>();
+    const passwordRef = useRef<any>();
+    const repeatPasswordRef = useRef<any>();
 
     const [selectedFile, setSelectedFile] = useState();
     const [progress, setProgress] = useState(0);
 
-    const { currentUser, userImage } = useAuth();
-    const [message, setMessage] = useState({ text: '', variant: 'primary' });
+    const {currentUser, userImage} = useAuth();
+    const [message, setMessage] = useState({text: '', variant: 'primary'});
     const [loading, setLoading] = useState(false);
 
     const history = useHistory();
@@ -33,23 +33,26 @@ function AccountForm()
         const newEmail = emailRef.current?.value;
         const newPassword = passwordRef.current?.value;
 
-        const promises = [];
+        const promises: any[] = [];
 
-        if (newEmail) promises.push(currentUser.updateEmail(newEmail));
-        if (newPassword) promises.push(currentUser.updatePassword(newPassword));
-
-        if (selectedFile)
+        if (currentUser)
         {
-            const storageRef = storage.child(currentUser.uid);
-            const task = storageRef.put(await resizeImage(selectedFile));
+            if (newEmail) promises.push(currentUser.updateEmail(newEmail));
+            if (newPassword) promises.push(currentUser.updatePassword(newPassword));
 
-            promises.push(task);
-
-            task.on("state_changed", uploadData =>
+            if (selectedFile)
             {
-                const percentage = uploadData.bytesTransferred / uploadData.totalBytes * 100;
-                setProgress(percentage);
-            });
+                const storageRef = storage.child(currentUser.uid);
+                const task = storageRef.put(await resizeImage(selectedFile));
+
+                promises.push(task);
+
+                task.on("state_changed", uploadData =>
+                {
+                    const percentage = uploadData.bytesTransferred / uploadData.totalBytes * 100;
+                    setProgress(percentage);
+                });
+            }
         }
 
         Promise.all(promises).then(() =>
@@ -58,7 +61,7 @@ function AccountForm()
 
             //Go to profile and reload the page
             history.push("/profile");
-            window.location.reload(false);
+            window.location.reload();
 
         }).catch(e => setMessage(createMessage(e + '', 'danger')));
 
@@ -71,12 +74,15 @@ function AccountForm()
         if (file) setSelectedFile(file);
     }
 
-    const createMessage = (text, variant = 'primary') => ({ text: text, variant: variant });
+    const createMessage = (text, variant = 'primary') => ({text: text, variant: variant});
 
     const AccountFormLayout = () =>
     {
         const INPUT_PLACEHOLDER = "Leave blank to keep the same!";
+
         const imgSource = selectedFile ? URL.createObjectURL(selectedFile) : userImage;
+        const userEmail = currentUser?.email || '';
+
         return (
             <>
                 <Card className={"p-2"}>
@@ -91,13 +97,13 @@ function AccountForm()
                                         <Form.File accept={"image/*"} onChange={handleFileChange}/>
                                         <progress value={progress} max={100}/>
                                     </div>
-                                    <Image src={imgSource} style={{ width: "100px", height: "100px" }}/>
+                                    <Image src={imgSource} style={{width: "100px", height: "100px"}}/>
                                 </div>
                             </Form.Group>
                             <hr/>
                             <Form.Group controlId={"email"}>
                                 <Form.Label>New Email</Form.Label>
-                                <Form.Control ref={emailRef} type={"email"} placeholder={currentUser.email} defaultValue={currentUser.email} required/>
+                                <Form.Control ref={emailRef} type={"email"} placeholder={userEmail} defaultValue={userEmail} required/>
                             </Form.Group>
                             <hr/>
                             <Form.Group controlId={"password"} className={"mt-2"}>
@@ -121,8 +127,8 @@ function AccountForm()
     }
 
     return (
-        <Container className={"d-flex align-items-center justify-content-center"} style={{ height: "100vh" }}>
-            <div className={"w-100"} style={{ maxWidth: "400px" }}>
+        <Container className={"d-flex align-items-center justify-content-center"} style={{height: "100vh"}}>
+            <div className={"w-100"} style={{maxWidth: "400px"}}>
                 <AccountFormLayout/>
             </div>
         </Container>

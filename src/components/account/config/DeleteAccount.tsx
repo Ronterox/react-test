@@ -6,10 +6,10 @@ import {database} from "../../../firebase";
 
 function DeleteAccount()
 {
-    const [message, setMessage] = useState({ text: '', variant: 'primary' });
+    const [message, setMessage] = useState({text: '', variant: 'primary'});
     const [loading, setLoading] = useState(false);
 
-    const { currentUser } = useAuth();
+    const {currentUser} = useAuth();
     const history = useHistory();
 
     async function handleDeleteUser()
@@ -19,10 +19,13 @@ function DeleteAccount()
             setMessage(createMessage(''));
             setLoading(true);
 
-            const userId = currentUser.uid;
+            if (currentUser)
+            {
+                const userId = currentUser.uid;
 
-            await currentUser.delete();
-            await database.child(userId).set(null);
+                await currentUser.delete();
+                await database.child(userId).set(null);
+            }
 
             history.push("/");
         }
@@ -34,7 +37,7 @@ function DeleteAccount()
         setLoading(false);
     }
 
-    const createMessage = (text, variant = 'primary') => ({ text: text, variant: variant });
+    const createMessage = (text, variant = 'primary') => ({text: text, variant: variant});
 
     const DeleteAccountLayout = () => (
         <>
@@ -53,8 +56,8 @@ function DeleteAccount()
         </>
     );
     return (
-        <Container className={"d-flex align-items-center justify-content-center"} style={{ height: "100vh" }}>
-            <div className={"w-100"} style={{ maxWidth: "400px" }}>
+        <Container className={"d-flex align-items-center justify-content-center"} style={{height: "100vh"}}>
+            <div className={"w-100"} style={{maxWidth: "400px"}}>
                 <DeleteAccountLayout/>
             </div>
         </Container>

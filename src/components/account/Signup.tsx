@@ -1,17 +1,17 @@
-import React, {useRef, useState} from 'react';
-import {Button, Card, Form, NavLink, Alert, Container} from "react-bootstrap";
-import {useAuth} from "../../contexts/AuthContext";
-import {Redirect} from "react-router-dom";
-import {BackToAppButton} from "./config/Profile";
+import React, { useRef, useState } from 'react';
+import { Button, Card, Form, NavLink, Alert, Container } from "react-bootstrap";
+import { useAuth } from "../../contexts/AuthContext";
+import { Redirect } from "react-router-dom";
+import { BackToAppButton } from "./config/Profile";
 
 
 export default function Signup()
 {
-    const emailRef = useRef();
-    const passwordRef = useRef();
-    const repeatPasswordRef = useRef();
+    const emailRef = useRef<any>();
+    const passwordRef = useRef<any>();
+    const repeatPasswordRef = useRef<any>();
 
-    const { signup, login} = useAuth();
+    const { signup, login } = useAuth();
     const [message, setMessage] = useState({ text: '', variant: 'primary' });
     const [loading, setLoading] = useState(false);
 
@@ -31,11 +31,15 @@ export default function Signup()
             const email = emailRef.current?.value;
             const password = passwordRef.current?.value;
 
-            await signup(email, password);
+            if (!email || !password) return;
 
-            setMessage(createMessage("Account successfully created!", 'success'))
+            if (signup)
+            {
+                await signup(email, password);
+                setMessage(createMessage("Account successfully created!", 'success'))
+            }
 
-            await login(email, password);
+            if (login) await login(email, password);
 
             setRedirect(true);
         }
