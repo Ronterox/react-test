@@ -47,7 +47,7 @@ interface TaskInfo
     lastModification: number
 }
 
-class TaskData
+export class TaskData
 {
     taskId: string;
     taskText: string;
@@ -110,7 +110,7 @@ export default function App()
 {
     const [myTodos, setTodos] = useState<TaskArray>([]);
     const [showDoneTasks, setShowDoneTasks] = useState(true);
-    const inputRef = useRef<HTMLInputElement>();
+    const inputRef = useRef<any>();
 
     const [connectedUser, setConnectedUser] = useState<User>();
 
@@ -134,24 +134,7 @@ export default function App()
 
         if (savedData)
         {
-            let todos: TaskArray = [];
-            const parsedData: TaskArray = JSON.parse(savedData);
-            /*
-                        parsedData.forEach(todo =>
-                        {
-                            if (todo.tasks)
-                            {
-                                const todolist: TaskData[] = [];
-                                todo.tasks.forEach(task => todolist.push(TaskData.createTask(task)));
-                                todos.push({ listName: todo.listName, tasks: todolist } as TaskList);
-                            }
-                            else if (todo.taskId) todos.push(TaskData.createTask(todo));
-                            else todos.push({ listName: todo.listName, tasks: [] } as TaskList);
-                        });*/
-
-            todos = parsedData;
-
-
+            const todos: TaskArray = JSON.parse(savedData);
             updateTaskList(todos, false);
         }
 
@@ -272,7 +255,7 @@ export default function App()
 
     useEffect(() => localStorage.setItem(SHOW_DONE_KEY, JSON.stringify(showDoneTasks)), [showDoneTasks]);
 
-    function updateTaskList(todos, isUser = true)
+    function updateTaskList(todos: TaskArray, isUser = true)
     {
         isUserRefresh.current = isUser;
         setTodos(todos);
@@ -359,7 +342,7 @@ export default function App()
         return filteredCopy;
     };
 
-    function removeTask(id)
+    function removeTask(id: string)
     {
         const deletedElement = findElement(id, myTodos);
         const todosWithoutDeletedOne = filterTodos(myTodos, element => element.taskId ? element.taskId !== id : true);
@@ -370,7 +353,7 @@ export default function App()
         updateTaskList(todosWithoutDeletedOne);
     }
 
-    function toggleTodo(id)
+    function toggleTodo(id: string)
     {
         const copyTodos = [...myTodos]
         const foundElement = findElement(id, copyTodos);
@@ -383,7 +366,7 @@ export default function App()
         updateTaskList(copyTodos);
     }
 
-    function toggleEdition(id, newValue)
+    function toggleEdition(id: string, newValue: string)
     {
         const copyTodos = [...myTodos]
         const foundElement = findElement(id, copyTodos);
@@ -444,6 +427,7 @@ export default function App()
         });
 
         return <TodoList todos={filterList(defaultList)}
+                         listName={DEFAULT_LIST_NAME}
                          toggleTodo={toggleTodo}
                          deleteTask={removeTask}
                          toggleEdition={toggleEdition}
@@ -496,7 +480,7 @@ export default function App()
                         <div className={"m-3 text-center"} style={{ width: "120px" }}>
                             <div>
                                 <Image src={userImage} roundedCircle className={"profile-pic"}/>
-                                <h3 className={"text-primary"}>@{currentUser.email.split('@')[0]}</h3>
+                                <h3 className={"text-primary"}>@{currentUser?.email?.split('@')[0]}</h3>
                                 <NavLink className={"btn btn-success text-dark"} href={"/profile"}>See Profile</NavLink>
                             </div>
                             <Button className={"w-100"} onClick={handleLogout} variant={"danger"} disabled={loading}>Log out</Button>
@@ -511,10 +495,10 @@ export default function App()
                             <h2>My List ☑️</h2>
                             <small>v2.0</small>
                             {
-                                myTodos.map((todolist, index) => todolist && (
-                                        todolist.tasks || !todolist.taskId ?
+                                myTodos.map((todolist, index) => (
+                                        !("taskId" in todolist) ?
                                             <TodoList key={index}
-                                                      todos={filterList(todolist.tasks)}
+                                                      todos={filterList((todolist as TaskList).tasks)}
                                                       toggleTodo={toggleTodo}
                                                       deleteTask={removeTask}
                                                       toggleEdition={toggleEdition}
@@ -529,7 +513,7 @@ export default function App()
                                                       editGroup={newName =>
                                                       {
                                                           const copyTodos = [...myTodos];
-                                                          copyTodos[index].listName = newName;
+                                                          (copyTodos[index] as TaskList).listName = newName;
                                                           updateTaskList(copyTodos);
                                                       }}
                                                       changeGroup={id =>
@@ -537,17 +521,17 @@ export default function App()
                                                           const copyTodos = [...myTodos];
                                                           const reversedTodos = [...copyTodos].reverse();
 
-                                                          let otherList = null;
+                                                          let otherList: TaskList | null = null;
 
                                                           const reversedIndex = reversedTodos.indexOf(copyTodos[index]);
                                                           let i = reversedIndex;
 
                                                           while ((i = (i + 1) % reversedTodos.length) !== reversedIndex && !otherList)
                                                           {
-                                                              if (reversedTodos[i].listName) otherList = reversedTodos[i];
+                                                              if ((reversedTodos[i] as TaskList).listName) otherList = reversedTodos[i] as TaskList;
                                                           }
 
-                                                          const oldGroup = copyTodos[index];
+                                                          const oldGroup: TaskList = copyTodos[index] as TaskList;
                                                           const taskGroup = oldGroup.tasks;
 
                                                           moveElementToOtherGroup(id, copyTodos, otherList, taskGroup);
