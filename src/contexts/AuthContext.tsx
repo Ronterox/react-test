@@ -1,5 +1,5 @@
-import React, {useContext, useEffect, useState} from "react";
-import {auth, storage} from "../firebase";
+import React, { useContext, useEffect, useState } from "react";
+import { auth, storage } from "../firebase";
 import images from "../media/images";
 import firebase from "firebase/app";
 
@@ -19,7 +19,7 @@ const AuthContext = React.createContext<Partial<UserData>>({});
 
 export const useAuth = () => useContext(AuthContext);
 
-export function AuthProvider({children})
+export function AuthProvider({ children })
 {
     const [currentUser, setCurrentUser] = useState<User>();
     const [loading, setLoading] = useState(true);
@@ -47,7 +47,7 @@ export function AuthProvider({children})
         });
     }, []);
 
-    const values = {currentUser, userImage, signup, login, logout}
+    const values = { currentUser, userImage, signup, login, logout }
 
     return (
         <AuthContext.Provider value={values}>

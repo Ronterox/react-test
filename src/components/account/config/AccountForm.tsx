@@ -1,10 +1,10 @@
-import React, {useRef, useState} from 'react';
-import {Alert, Button, Card, Container, Form, Image, NavLink} from "react-bootstrap";
-import {useAuth} from "../../../contexts/AuthContext";
-import {storage} from "../../../firebase";
-import {BackToAppButton} from "./Profile";
-import {resizeImage} from "../../utils/Compressor";
-import {useHistory} from "react-router-dom";
+import React, { useRef, useState } from 'react';
+import { Alert, Button, Card, Container, Form, Image, NavLink } from "react-bootstrap";
+import { useAuth } from "../../../contexts/AuthContext";
+import { storage } from "../../../firebase";
+import { BackToAppButton } from "./Profile";
+import { resizeImage } from "../../utils/Compressor";
+import { useHistory } from "react-router-dom";
 
 function AccountForm()
 {
@@ -15,8 +15,8 @@ function AccountForm()
     const [selectedFile, setSelectedFile] = useState();
     const [progress, setProgress] = useState(0);
 
-    const {currentUser, userImage} = useAuth();
-    const [message, setMessage] = useState({text: '', variant: 'primary'});
+    const { currentUser, userImage } = useAuth();
+    const [message, setMessage] = useState({ text: '', variant: 'primary' });
     const [loading, setLoading] = useState(false);
 
     const history = useHistory();
@@ -42,12 +42,11 @@ function AccountForm()
 
             if (selectedFile)
             {
-                const storageRef = storage.child(currentUser.uid);
-                const task = storageRef.put(await resizeImage(selectedFile));
+                const task = storage.child(currentUser.uid).put(await resizeImage(selectedFile));
 
                 promises.push(task);
 
-                task.on("state_changed", uploadData =>
+                task.on('state_changed', uploadData =>
                 {
                     const percentage = uploadData.bytesTransferred / uploadData.totalBytes * 100;
                     setProgress(percentage);
@@ -74,7 +73,7 @@ function AccountForm()
         if (file) setSelectedFile(file);
     }
 
-    const createMessage = (text, variant = 'primary') => ({text: text, variant: variant});
+    const createMessage = (text, variant = 'primary') => ({ text: text, variant: variant });
 
     const AccountFormLayout = () =>
     {
@@ -94,10 +93,10 @@ function AccountForm()
                                 <div className={"d-flex justify-content-around m-auto"}>
                                     <div className={"w-50"}>
                                         <Form.Label>New Profile Picture</Form.Label>
-                                        <Form.File accept={"image/*"} onChange={handleFileChange}/>
+                                        <Form.File accept={'image/*'} onChange={handleFileChange}/>
                                         <progress value={progress} max={100}/>
                                     </div>
-                                    <Image src={imgSource} style={{width: "100px", height: "100px"}}/>
+                                    <Image src={imgSource} style={{ width: "100px", height: "100px" }}/>
                                 </div>
                             </Form.Group>
                             <hr/>
@@ -127,8 +126,8 @@ function AccountForm()
     }
 
     return (
-        <Container className={"d-flex align-items-center justify-content-center"} style={{height: "100vh"}}>
-            <div className={"w-100"} style={{maxWidth: "400px"}}>
+        <Container className={"d-flex align-items-center justify-content-center"} style={{ height: "100vh" }}>
+            <div className={"w-100"} style={{ maxWidth: "400px" }}>
                 <AccountFormLayout/>
             </div>
         </Container>

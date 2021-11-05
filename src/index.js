@@ -6,4 +6,4 @@ import './css/custom.scss';
 
 ReactDOM.render(<App/>, document.getElementById('root'));
 
-registerServiceWorker().register();
+registerServiceWorker();

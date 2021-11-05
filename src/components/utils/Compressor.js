@@ -1,4 +1,4 @@
-import Compress from "compress.js"
+import Compress from 'compress.js'
 
 export async function resizeImage(file)
 {
